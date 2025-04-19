@@ -1,5 +1,5 @@
 
-#line 3 "lex.yy.c"
+#line 2 "lex.yy.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -542,6 +542,9 @@ void addKeyword(const char *keyword) {
 void addIdentifier(const char *id) {
     fprintf(outputFile, "IDENTIFIER: %s\n", id);
 }
+void addType(const char *id) {
+    fprintf(outputFile, "TYPE: %s\n", id);
+}
 
 void addInteger(const char *num) {
     fprintf(outputFile, "INT_LITERAL: %s\n", num);
@@ -566,8 +569,8 @@ void addString(const char *str) {
 void addChar(const char *ch) {
     fprintf(outputFile, "CHAR_LITERAL: %s\n", ch);
 }
-#line 570 "lex.yy.c"
-#line 571 "lex.yy.c"
+#line 572 "lex.yy.c"
+#line 573 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -784,10 +787,10 @@ YY_DECL
 		}
 
 	{
-#line 63 "lex.l"
+#line 66 "lex.l"
 
 
-#line 791 "lex.yy.c"
+#line 793 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -846,184 +849,184 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 65 "lex.l"
-{ addKeyword("int"); }
+#line 68 "lex.l"
+{ addType("int"); }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 66 "lex.l"
-{ addKeyword("bool"); }
+#line 69 "lex.l"
+{ addType("bool"); }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 67 "lex.l"
-{ addKeyword("string"); }
+#line 70 "lex.l"
+{ addType("string"); }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 68 "lex.l"
-{ addKeyword("char"); }
+#line 71 "lex.l"
+{ addType("char"); }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 69 "lex.l"
+#line 72 "lex.l"
 { addKeyword("main"); }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 70 "lex.l"
+#line 73 "lex.l"
 { addKeyword("if"); }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 71 "lex.l"
+#line 74 "lex.l"
 { addKeyword("else"); }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 72 "lex.l"
+#line 75 "lex.l"
 { addKeyword("while"); }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 73 "lex.l"
+#line 76 "lex.l"
 { addKeyword("return"); }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 74 "lex.l"
+#line 77 "lex.l"
 { addBoolLiteral("true"); }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 75 "lex.l"
+#line 78 "lex.l"
 { addBoolLiteral("false"); }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 76 "lex.l"
+#line 79 "lex.l"
 { addLogical("and"); }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 77 "lex.l"
+#line 80 "lex.l"
 { addLogical("or"); }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 78 "lex.l"
+#line 81 "lex.l"
 { addLogical("not"); }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 79 "lex.l"
-{ addKeyword("void"); }
+#line 82 "lex.l"
+{ addType("void"); }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 80 "lex.l"
+#line 83 "lex.l"
 { addKeyword("print"); }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 81 "lex.l"
+#line 84 "lex.l"
 { addKeyword("scan"); }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 83 "lex.l"
+#line 86 "lex.l"
 { addInteger(yytext); }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 84 "lex.l"
+#line 87 "lex.l"
 { addIdentifier(yytext); }
 	YY_BREAK
 case 20:
 /* rule 20 can match eol */
 YY_RULE_SETUP
-#line 85 "lex.l"
+#line 88 "lex.l"
 { addString(yytext); }
 	YY_BREAK
 case 21:
 /* rule 21 can match eol */
 YY_RULE_SETUP
-#line 86 "lex.l"
+#line 89 "lex.l"
 { addChar(yytext); }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 87 "lex.l"
+#line 90 "lex.l"
 { addOperator(yytext); }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 88 "lex.l"
+#line 91 "lex.l"
 { addOperator(yytext); }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 89 "lex.l"
+#line 92 "lex.l"
 { addOperator(yytext); }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 90 "lex.l"
+#line 93 "lex.l"
 { fprintf(outputFile, "SEMICOLON: ;\n"); }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 91 "lex.l"
+#line 94 "lex.l"
 { fprintf(outputFile, "COMMA: ,\n"); }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 92 "lex.l"
+#line 95 "lex.l"
 { fprintf(outputFile, "LBRACE: {\n"); }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 93 "lex.l"
+#line 96 "lex.l"
 { fprintf(outputFile, "RBRACE: }\n"); }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 94 "lex.l"
+#line 97 "lex.l"
 { fprintf(outputFile, "LPAREN: (\n"); }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 95 "lex.l"
+#line 98 "lex.l"
 { fprintf(outputFile, "RPAREN: )\n"); }
 	YY_BREAK
 case 31:
 /* rule 31 can match eol */
 YY_RULE_SETUP
-#line 96 "lex.l"
+#line 99 "lex.l"
 { /* Ignore */ }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 97 "lex.l"
+#line 100 "lex.l"
 { /* Single line comment - ignore */ }
 	YY_BREAK
 case 33:
 /* rule 33 can match eol */
 YY_RULE_SETUP
-#line 98 "lex.l"
+#line 101 "lex.l"
 { /* Multi-line comment - ignore */ }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 99 "lex.l"
+#line 102 "lex.l"
 { fprintf(outputFile, "UNKNOWN: %s\n", yytext); }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 101 "lex.l"
+#line 104 "lex.l"
 ECHO;
 	YY_BREAK
-#line 1027 "lex.yy.c"
+#line 1029 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2028,33 +2031,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 101 "lex.l"
+#line 104 "lex.l"
 
 
-int main(int argc, char **argv) {
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s <sourcefile>\n", argv[0]);
-        return 1;
-    }
-
-    FILE *inputFile = fopen(argv[1], "r");
-    if (!inputFile) {
-        perror("Failed to open input file");
-        return 1;
-    }
-
-    outputFile = fopen("tokens.txt", "w");
-    if (!outputFile) {
-        perror("Failed to create output file");
-        return 1;
-    }
-
-    yyin = inputFile;
-    yylex();
-
-    fclose(inputFile);
-    fclose(outputFile);
-
-    return 0;
-}
 

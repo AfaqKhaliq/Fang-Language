@@ -23,6 +23,9 @@ void addKeyword(const char *keyword) {
 void addIdentifier(const char *id) {
     fprintf(outputFile, "IDENTIFIER: %s\n", id);
 }
+void addType(const char *id) {
+    fprintf(outputFile, "TYPE: %s\n", id);
+}
 
 void addInteger(const char *num) {
     fprintf(outputFile, "INT_LITERAL: %s\n", num);
@@ -62,10 +65,10 @@ WHITESPACE [ \t\r\n]+
 
 %%
 
-"int"      { addKeyword("int"); }
-"bool"     { addKeyword("bool"); }
-"string"   { addKeyword("string"); }
-"char"     { addKeyword("char"); }
+"int"      { addType("int"); }
+"bool"     { addType("bool"); }
+"string"   { addType("string"); }
+"char"     { addType("char"); }
 "main"     { addKeyword("main"); }
 "if"       { addKeyword("if"); }
 "else"     { addKeyword("else"); }
@@ -76,7 +79,7 @@ WHITESPACE [ \t\r\n]+
 "and"      { addLogical("and"); }
 "or"       { addLogical("or"); }
 "not"      { addLogical("not"); }
-"void"     { addKeyword("void"); }
+"void"     { addType("void"); }
 "print"    { addKeyword("print"); }
 "scan"     { addKeyword("scan"); }
 
@@ -100,29 +103,3 @@ WHITESPACE [ \t\r\n]+
 
 %%
 
-int main(int argc, char **argv) {
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s <sourcefile>\n", argv[0]);
-        return 1;
-    }
-
-    FILE *inputFile = fopen(argv[1], "r");
-    if (!inputFile) {
-        perror("Failed to open input file");
-        return 1;
-    }
-
-    outputFile = fopen("tokens.txt", "w");
-    if (!outputFile) {
-        perror("Failed to create output file");
-        return 1;
-    }
-
-    yyin = inputFile;
-    yylex();
-
-    fclose(inputFile);
-    fclose(outputFile);
-
-    return 0;
-}
