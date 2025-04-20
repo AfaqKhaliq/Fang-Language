@@ -3,6 +3,8 @@
 #include "symbol_table.h"
 int yylex(void);
 int yyerror(const char *s);
+char* current_type;
+
 %}
 
 %union {
@@ -11,22 +13,31 @@ int yyerror(const char *s);
 
 %token <strval> ID
 %token INT
+%token BOOL
+%token CHAR
+%token STRING
 %token SEMICOLON
+%token COMMA
 
 %type <strval> BaseType
-
+%type <strval> IDLIST
 %%
 
 VarDeclaration:
-    BaseType ID SEMICOLON {
-        insert_symbol($2, $1);   // $1 = type ("int"), $2 = identifier ("x")
-    }
+    BaseType{current_type=$1;} IDLIST SEMICOLON 
 ;
+
+IDLIST:
+    ID { insert_symbol($1, current_type); }
+    | ID COMMA IDLIST { insert_symbol($1, current_type); }
 
 BaseType:
     INT {
         $$ = "int";
     }
+    | BOOL { $$ = "Bool"; }
+    | CHAR { $$ = "char"; }
+    | STRING { $$ = "string"; }
 ;
 
 %%   // ← OPTIONAL: main, yyerror, etc.
