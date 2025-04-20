@@ -1,0 +1,4 @@
+bison -d parser.y       # Generates parser.tab.c and parser.tab.h
+flex scanner.l          # Generates lex.yy.c
+gcc parser.tab.c lex.yy.c -o parser -lfl
+./parser < input.txt
