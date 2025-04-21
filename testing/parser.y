@@ -24,7 +24,7 @@ char* current_type;
 %%
 
 VarDeclaration:
-    BaseType{current_type=$1;} IDLIST SEMICOLON 
+    BaseType{current_type=$1;} IDLIST SEMICOLON // inheritance
 ;
 
 IDLIST:
