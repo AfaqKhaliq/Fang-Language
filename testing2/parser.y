@@ -71,7 +71,7 @@ struct FunctionSignature { enum Type return_type;
 %%
 
 Program:
-    FUNCTIONDECLARATIONS MAINFUNCTION
+   FUNCTIONDECLARATIONS MAINFUNCTION
 ;
 
 MAINFUNCTION:
@@ -86,7 +86,7 @@ MAINFUNCTION:
 ;
 
 FUNCTIONDECLARATIONS:
-    FUNCTIONDECLARATIONS FUNCTIONDEC
+    FUNCTIONDECLARATIONS  {/* pass current symbol table*/ current_table[index++].passglobal} FUNCTIONDEC
   | /* empty */
 ;
 
@@ -99,7 +99,7 @@ FUNCTIONDEC:
         if (!has_return_statement) {
             yyerror("main() must end with a return statement");
         }
-        add_to_symbol_functions($2, $1, parameters_list); 
+        add_to_symbol_functions($2, $1, parameters_list); //add to the global_table not current
     }
 ;
 
