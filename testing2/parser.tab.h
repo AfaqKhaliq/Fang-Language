@@ -70,29 +70,13 @@ extern int yydebug;
     ASSIGN = 271,                  /* ASSIGN  */
     LBRACE = 272,                  /* LBRACE  */
     RBRACE = 273,                  /* RBRACE  */
-    OR = 274,                      /* OR  */
-    AND = 275,                     /* AND  */
-    NOT = 276,                     /* NOT  */
-    PLUS = 277,                    /* PLUS  */
-    MINUS = 278,                   /* MINUS  */
-    MUL = 279,                     /* MUL  */
-    DIV = 280,                     /* DIV  */
-    MODULO = 281,                  /* MODULO  */
-    LESSTHAN = 282,                /* LESSTHAN  */
-    MORETHAN = 283,                /* MORETHAN  */
-    LESSANDEQUAL = 284,            /* LESSANDEQUAL  */
-    MOREANDEQUAL = 285,            /* MOREANDEQUAL  */
-    EQUAL = 286,                   /* EQUAL  */
-    NOTEQUAL = 287,                /* NOTEQUAL  */
-    TRUE = 288,                    /* TRUE  */
-    FALSE = 289,                   /* FALSE  */
-    PRINT = 290,                   /* PRINT  */
-    SCAN = 291,                    /* SCAN  */
-    IF = 292,                      /* IF  */
-    ELSE = 293,                    /* ELSE  */
-    WHILE = 294,                   /* WHILE  */
-    RETURN = 295,                  /* RETURN  */
-    MAIN = 296                     /* MAIN  */
+    PRINT = 274,                   /* PRINT  */
+    SCAN = 275,                    /* SCAN  */
+    IF = 276,                      /* IF  */
+    ELSE = 277,                    /* ELSE  */
+    WHILE = 278,                   /* WHILE  */
+    RETURN = 279,                  /* RETURN  */
+    MAIN = 280                     /* MAIN  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -101,13 +85,13 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 39 "parser.y"
+#line 102 "parser.y"
 
-    char* strval;
-    int intval;
-    char* type;
+        char* strval;
+        int intval;
+    
 
-#line 111 "parser.tab.h"
+#line 95 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

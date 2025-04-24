@@ -48,3 +48,4 @@ WHITESPACE [ \t\r\n]+
                  fprintf(stderr, "Lexical Error: Unknown symbol '%s'\n", yytext);
                  exit(1);
               }
+%%

@@ -1,0 +1,6 @@
+void printMessage(bool x, bool y) {
+}
+int sum(int a, int b) {
+}
+int main() {
+}

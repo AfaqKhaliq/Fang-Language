@@ -1,0 +1,3 @@
+ bison -d -o parser.tab.c parser.y
+g++ -o parser parser.tab.c scanner.c 
+flex -o scanner.c scanner.l
