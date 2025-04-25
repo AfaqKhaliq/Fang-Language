@@ -136,7 +136,7 @@
         int intval;
         char * type;
     }
-    %define parse.error verbose
+    %error-verbose
     %token <strval> ID INT_LITERAL STRINGLITERAL CHARLITERAL
     %token INT BOOL CHAR STRING VOID
     %token SEMICOLON COMMA LPAREN RPAREN ASSIGN LBRACE RBRACE
@@ -145,7 +145,7 @@
     %token PLUS MINUS MUL DIV MODULO
     %token <strval> TRUE FALSE
     %type <strval> BaseType  RETURNTYPE IDLIST 
-    %type <type> EXPRSTMT
+    %type <strval> EXPRSTMT
     %type <strval> Expression NotExpr RelationalExpr AdditiveExpr MultExpr UnaryExpr Factor 
     %token PRINT SCAN 
     %token IF ELSE WHILE RETURN MAIN
@@ -235,7 +235,15 @@ STMTLIST:{cout<<"\nI am at STMTLIST\n";}STATEMENT STMTLIST
     | //EMPTY
 ;
 
-
+EXPRSTMT:
+    {cout<<"\nI am at ExpStm\n";}ID ASSIGN Expression SEMICOLON {
+        $$=$1;
+        string declared_type =GlobalTable.Table[string($1)].type;
+        cout<<"id assigned value";
+        if (declared_type != string($3))
+            yyerror("Type mismatch in assignment");
+    }
+;
 
 
 STATEMENT:{cout<<"\nI am at STMT\n";} EXPRSTMT 
@@ -244,16 +252,6 @@ STATEMENT:{cout<<"\nI am at STMT\n";} EXPRSTMT
    // | ITERATIONSTMT
    // | RETURNSTMT
    // | IOSTMT
-;
-
-
-EXPRSTMT:
-    ID ASSIGN Expression SEMICOLON{
-        string declared_type =GlobalTable.Table[string($1)].type;
-        cout<<"id assigned value"
-        if (declared_type != string($3))
-            yyerror("Type mismatch in assignment");
-    }
 ;
 
 Expression:
@@ -271,6 +269,10 @@ Expression:
 
 
 
+
+
+
+
 AndExpr:
     AndExpr AND NotExpr {
         if (strcmp($1, "bool") == 0 && strcmp($3, "bool") == 0)
@@ -283,9 +285,9 @@ AndExpr:
   | NotExpr { $$ = $1; }
 ;
 
-NotExpr: NOT NotExpr
-      {
-        if (strcmp($2, "bool") == 0)
+NotExpr:
+    NOT NotExpr {
+        if (strcmp($3, "bool") == 0)
             $$ = "bool";
         else {
             yyerror("Operand of 'not' must be bool");
@@ -380,6 +382,10 @@ Factor:
     }
   | '(' Expression ')' { $$ = $2; }
 ;
+
+
+
+
 
 
 

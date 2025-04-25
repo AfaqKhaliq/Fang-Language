@@ -105,9 +105,10 @@ union YYSTYPE
 
         char* strval;
         int intval;
+        char * type;
     
 
-#line 111 "parser.tab.h"
+#line 112 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
