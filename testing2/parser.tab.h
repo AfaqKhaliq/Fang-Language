@@ -70,13 +70,29 @@ extern int yydebug;
     ASSIGN = 271,                  /* ASSIGN  */
     LBRACE = 272,                  /* LBRACE  */
     RBRACE = 273,                  /* RBRACE  */
-    PRINT = 274,                   /* PRINT  */
-    SCAN = 275,                    /* SCAN  */
-    IF = 276,                      /* IF  */
-    ELSE = 277,                    /* ELSE  */
-    WHILE = 278,                   /* WHILE  */
-    RETURN = 279,                  /* RETURN  */
-    MAIN = 280                     /* MAIN  */
+    OR = 274,                      /* OR  */
+    AND = 275,                     /* AND  */
+    NOT = 276,                     /* NOT  */
+    LESSTHAN = 277,                /* LESSTHAN  */
+    MORETHAN = 278,                /* MORETHAN  */
+    LESSANDEQUAL = 279,            /* LESSANDEQUAL  */
+    MOREANDEQUAL = 280,            /* MOREANDEQUAL  */
+    EQUAL = 281,                   /* EQUAL  */
+    NOTEQUAL = 282,                /* NOTEQUAL  */
+    PLUS = 283,                    /* PLUS  */
+    MINUS = 284,                   /* MINUS  */
+    MUL = 285,                     /* MUL  */
+    DIV = 286,                     /* DIV  */
+    MODULO = 287,                  /* MODULO  */
+    TRUE = 288,                    /* TRUE  */
+    FALSE = 289,                   /* FALSE  */
+    PRINT = 290,                   /* PRINT  */
+    SCAN = 291,                    /* SCAN  */
+    IF = 292,                      /* IF  */
+    ELSE = 293,                    /* ELSE  */
+    WHILE = 294,                   /* WHILE  */
+    RETURN = 295,                  /* RETURN  */
+    MAIN = 296                     /* MAIN  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -85,13 +101,13 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 113 "parser.y"
+#line 134 "parser.y"
 
         char* strval;
         int intval;
     
 
-#line 95 "parser.tab.h"
+#line 111 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

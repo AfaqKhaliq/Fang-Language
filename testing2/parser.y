@@ -8,6 +8,7 @@
     #include <unordered_map>
     #include <iostream>
     #include <vector>
+    #include<variant>
     using namespace std;
 
     
@@ -21,7 +22,7 @@
     class SymbolInfo {
     public:
         int size;
-        string value;
+        variant<int, bool, char, string> value;;
         string type;
         bool isFunc;
         vector<string> param_types;
@@ -30,7 +31,25 @@
         SymbolInfo() : size(0), value("NULL"), type("void"), isFunc(false) {}
 
         ~SymbolInfo() {}
-
+        
+          void setValue(const string& valStr) {
+        if (type == "int") {
+            value = stoi(valStr);
+        } else if (type == "bool") {
+            value = (valStr == "true");
+        } else if (type == "char") {
+            value = valStr[0];
+        } else if (type == "string") {
+            value = valStr;
+        }
+    }
+        string getValueStr() const {
+        if (type == "int") return to_string(get<int>(value));
+        if (type == "bool") return get<bool>(value) ? "true" : "false";
+        if (type == "char") return string(1, get<char>(value));
+        if (type == "string") return get<string>(value);
+        return "undefined";
+                                         }
         SymbolInfo& operator=(const SymbolInfo& rhs) {
             if (this != &rhs) {
                 this->size = rhs.size;
@@ -52,7 +71,9 @@
         SymbolTable() {
             this->Parent = nullptr;
         }
+       
 
+   
         ~SymbolTable() {}
 
         void SetParent(SymbolTable* P) {
@@ -117,7 +138,12 @@
     %token <strval> ID INT_LITERAL STRINGLITERAL CHARLITERAL
     %token INT BOOL CHAR STRING VOID
     %token SEMICOLON COMMA LPAREN RPAREN ASSIGN LBRACE RBRACE
+    %token OR AND NOT
+    %token LESSTHAN MORETHAN LESSANDEQUAL MOREANDEQUAL EQUAL NOTEQUAL
+    %token PLUS MINUS MUL DIV MODULO
+    %token <strval> TRUE FALSE
     %type <strval> BaseType  RETURNTYPE IDLIST 
+    %type <strval> Expression AndExpr NotExpr RelationalExpr AdditiveExpr MultExpr UnaryExpr Factor EXPRSTMT
     %token PRINT SCAN 
     %token IF ELSE WHILE RETURN MAIN
     
@@ -188,7 +214,7 @@ BaseType:
   ;
 
 COMPOUNDSTMT:
-            LBRACE LOCALDECLARATIONS  RBRACE ;
+            LBRACE LOCALDECLARATIONS STMTLIST RBRACE ;
 LOCALDECLARATIONS:
     /* empty */
   | VarDeclaration LOCALDECLARATIONS
@@ -201,6 +227,157 @@ IDLIST:
     ID { GlobalTable.AddId($1, current_type); }
   | ID COMMA IDLIST { GlobalTable.AddId($1, current_type); }
 ;
+
+STMTLIST:{cout<<"\nI am at STMTLIST\n";}STATEMENT STMTLIST 
+    | //EMPTY
+;
+STATEMENT:{cout<<"\nI am at STMT\n";} EXPRSTMT 
+   // | COMPOUNDSTMT
+   // | SELECTIONSTMT
+   // | ITERATIONSTMT
+   // | RETURNSTMT
+   // | IOSTMT
+;
+EXPRSTMT:
+    {cout<<"\nI am at ExpStm\n";}ID ASSIGN Expression SEMICOLON {
+        string declared_type =GlobalTable.Table[string($1)].type;
+        cout<<"id assigned value"
+        if (declared_type != string($3))
+            yyerror("Type mismatch in assignment");
+    }
+;
+
+
+
+
+Expression:
+    {cout<<"\nI am at Expression\n";}Expression OR AndExpr {
+        if ($1 == "bool" && $3 == "bool")
+            $$ = "bool";
+        else {
+            yyerror("OR operands must be bool");
+            $$ = "error";
+        }
+    }
+  | AndExpr { $$ = $1; }
+;
+
+AndExpr:
+    AndExpr AND NotExpr {
+        if ($1 == "bool" && $3 == "bool")
+            $$ = "bool";
+        else {
+            yyerror("AND operands must be bool");
+            $$ = "error";
+        }
+    }
+  | NotExpr { $$ = $1; }
+;
+
+NotExpr:
+    NOT NotExpr {
+        if ($2 == "bool")
+            $$ = "bool";
+        else {
+            yyerror("Operand of 'not' must be bool");
+            $$ = "error";
+        }
+    }
+  | RelationalExpr { $$ = $1; }
+;
+
+RelationalExpr:
+    AdditiveExpr {
+        $$ = $1;
+    }
+  | AdditiveExpr RELOP AdditiveExpr {
+        if ($1 == "int" && $3 == "int")
+            $$ = "bool";
+        else {
+            yyerror("Comparison operands must be int");
+            $$ = "error";
+        }
+    }
+;
+
+RELOP:
+    LESSTHAN 
+    | MORETHAN 
+    | LESSANDEQUAL 
+    | MOREANDEQUAL 
+    | EQUAL 
+    | NOTEQUAL
+;
+
+AdditiveExpr:
+    AdditiveExpr ARTHOP MultExpr {
+        if ($1 == "int" && $3 == "int")
+            $$ = "int";
+        else {
+            yyerror("Operands of '+' must be int");
+            $$ = "error";
+        }
+    }
+  | MultExpr { $$ = $1; }
+;
+
+ARTHOP: 
+    PLUS
+    | MINUS
+;
+
+MultExpr:
+    MultExpr MULOP UnaryExpr {
+        if ($1 == "int" && $3 == "int")
+            $$ = "int";
+        else {
+            yyerror("Operands of '*' must be int");
+            $$ = "error";
+        }
+    }
+  | UnaryExpr { $$ = $1; }
+;
+
+MULOP:
+    DIV
+    | MUL 
+    | MODULO
+;
+
+UnaryExpr:
+    MINUS Factor {
+        if ($2 == "int")
+            $$ = "int";
+        else {
+            yyerror("Unary minus only allowed on int");
+            $$ = "error";
+        }
+    }
+  | Factor { $$ = $1; }
+;
+
+Factor:
+    INT_LITERAL       { $$ = "int"; }
+  | STRINGLITERAL     { $$ = "string"; }
+  | CHARLITERAL       { $$ = "char"; }
+  | TRUE | FALSE      { $$ = "bool"; }
+  | ID {  
+        if (GlobalTable.Table.find($1)==GlobalTable.Table.end()) {
+            char msg[128];
+            sprintf(msg, "Undeclared variable: %s", $1);
+            yyerror(msg);
+        }
+        else{ $$=strdup(GlobalTable.Table[string($1)].type.c_str());}
+    }
+  | '(' Expression ')' { $$ = $2; }
+;
+
+
+
+
+
+
+
     %%
 
     int main() {
