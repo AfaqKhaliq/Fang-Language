@@ -58,7 +58,18 @@
         void SetParent(SymbolTable* P) {
             this->Parent = P;
         }
-
+        void AddId(const char* id,string type){
+            string name(id);
+            if (this->Table.find(id)==Table.end()){
+                SymbolInfo ID;
+                ID.type=type;
+                this->Table[name]=ID;
+                cout<<"\nadded" << name<<" to table";
+            }
+            else{
+                cout<< name << "already decalred in thi scope";
+            }
+        }
         void AddFunctionToTable(const char* id, FunctionSignature Sig, string return_type) {
             SymbolInfo func;
             func.type = return_type;
@@ -106,23 +117,26 @@
     %token <strval> ID INT_LITERAL STRINGLITERAL CHARLITERAL
     %token INT BOOL CHAR STRING VOID
     %token SEMICOLON COMMA LPAREN RPAREN ASSIGN LBRACE RBRACE
-    %type <strval> BaseType  RETURNTYPE
+    %type <strval> BaseType  RETURNTYPE IDLIST 
     %token PRINT SCAN 
     %token IF ELSE WHILE RETURN MAIN
-
+    
+    %start Program
     %%
 
-    Program:
-    FUNCTIONDECLARATIONS MAINFUNCTION
+    Program: FUNCTIONDECLARATIONS MAINFUNCTION
     ;
 
     MAINFUNCTION:
         INT MAIN LPAREN RPAREN 
-        LBRACE
-        RBRACE
+
         {function_type="int"; 
         has_return_statement = false;
-
+        }
+        
+        COMPOUNDSTMT
+        
+        {
             if (function_type != "void" && !has_return_statement) {
                     //yyerror("Non-void function must end with a return statement");
                 }
@@ -173,9 +187,20 @@ BaseType:
   | STRING { $$ = strdup("string"); }
   ;
 
+COMPOUNDSTMT:
+            LBRACE LOCALDECLARATIONS  RBRACE ;
+LOCALDECLARATIONS:
+    /* empty */
+  | VarDeclaration LOCALDECLARATIONS
+;
 
-
-
+VarDeclaration:
+    BaseType { current_type = $1; } IDLIST SEMICOLON
+;
+IDLIST:
+    ID { GlobalTable.AddId($1, current_type); }
+  | ID COMMA IDLIST { GlobalTable.AddId($1, current_type); }
+;
     %%
 
     int main() {

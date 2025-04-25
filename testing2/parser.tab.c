@@ -128,7 +128,18 @@
         void SetParent(SymbolTable* P) {
             this->Parent = P;
         }
-
+        void AddId(const char* id,string type){
+            string name(id);
+            if (this->Table.find(id)==Table.end()){
+                SymbolInfo ID;
+                ID.type=type;
+                this->Table[name]=ID;
+                cout<<"\nadded" << name<<" to table";
+            }
+            else{
+                cout<< name << "already decalred in thi scope";
+            }
+        }
         void AddFunctionToTable(const char* id, FunctionSignature Sig, string return_type) {
             SymbolInfo func;
             func.type = return_type;
@@ -169,7 +180,7 @@
 
     
 
-#line 173 "parser.tab.c"
+#line 184 "parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -226,14 +237,20 @@ enum yysymbol_kind_t
   YYSYMBOL_YYACCEPT = 26,                  /* $accept  */
   YYSYMBOL_Program = 27,                   /* Program  */
   YYSYMBOL_MAINFUNCTION = 28,              /* MAINFUNCTION  */
-  YYSYMBOL_FUNCTIONDECLARATIONS = 29,      /* FUNCTIONDECLARATIONS  */
-  YYSYMBOL_FUNCTIONDEC = 30,               /* FUNCTIONDEC  */
-  YYSYMBOL_RETURNTYPE = 31,                /* RETURNTYPE  */
-  YYSYMBOL_PARAMETERS = 32,                /* PARAMETERS  */
-  YYSYMBOL_33_1 = 33,                      /* $@1  */
-  YYSYMBOL_PARAMETERLIST = 34,             /* PARAMETERLIST  */
-  YYSYMBOL_PARAMETER = 35,                 /* PARAMETER  */
-  YYSYMBOL_BaseType = 36                   /* BaseType  */
+  YYSYMBOL_29_1 = 29,                      /* $@1  */
+  YYSYMBOL_FUNCTIONDECLARATIONS = 30,      /* FUNCTIONDECLARATIONS  */
+  YYSYMBOL_FUNCTIONDEC = 31,               /* FUNCTIONDEC  */
+  YYSYMBOL_RETURNTYPE = 32,                /* RETURNTYPE  */
+  YYSYMBOL_PARAMETERS = 33,                /* PARAMETERS  */
+  YYSYMBOL_34_2 = 34,                      /* $@2  */
+  YYSYMBOL_PARAMETERLIST = 35,             /* PARAMETERLIST  */
+  YYSYMBOL_PARAMETER = 36,                 /* PARAMETER  */
+  YYSYMBOL_BaseType = 37,                  /* BaseType  */
+  YYSYMBOL_COMPOUNDSTMT = 38,              /* COMPOUNDSTMT  */
+  YYSYMBOL_LOCALDECLARATIONS = 39,         /* LOCALDECLARATIONS  */
+  YYSYMBOL_VarDeclaration = 40,            /* VarDeclaration  */
+  YYSYMBOL_41_3 = 41,                      /* $@3  */
+  YYSYMBOL_IDLIST = 42                     /* IDLIST  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -561,16 +578,16 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  3
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   28
+#define YYLAST   35
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  26
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  11
+#define YYNNTS  17
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  18
+#define YYNRULES  26
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  32
+#define YYNSTATES  44
 
 /* YYMAXUTOK -- Last valid token kind.  */
 #define YYMAXUTOK   280
@@ -622,8 +639,9 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,   116,   116,   120,   133,   135,   139,   154,   155,   157,
-     157,   158,   160,   161,   163,   170,   171,   172,   173
+       0,   127,   127,   133,   131,   147,   149,   153,   168,   169,
+     171,   171,   172,   174,   175,   177,   184,   185,   186,   187,
+     191,   192,   194,   198,   198,   201,   202
 };
 #endif
 
@@ -643,9 +661,10 @@ static const char *const yytname[] =
   "STRINGLITERAL", "CHARLITERAL", "INT", "BOOL", "CHAR", "STRING", "VOID",
   "SEMICOLON", "COMMA", "LPAREN", "RPAREN", "ASSIGN", "LBRACE", "RBRACE",
   "PRINT", "SCAN", "IF", "ELSE", "WHILE", "RETURN", "MAIN", "$accept",
-  "Program", "MAINFUNCTION", "FUNCTIONDECLARATIONS", "FUNCTIONDEC",
-  "RETURNTYPE", "PARAMETERS", "$@1", "PARAMETERLIST", "PARAMETER",
-  "BaseType", YY_NULLPTR
+  "Program", "MAINFUNCTION", "$@1", "FUNCTIONDECLARATIONS", "FUNCTIONDEC",
+  "RETURNTYPE", "PARAMETERS", "$@2", "PARAMETERLIST", "PARAMETER",
+  "BaseType", "COMPOUNDSTMT", "LOCALDECLARATIONS", "VarDeclaration", "$@3",
+  "IDLIST", YY_NULLPTR
 };
 
 static const char *
@@ -655,12 +674,12 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-16)
+#define YYPACT_NINF (-15)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
 
-#define YYTABLE_NINF (-12)
+#define YYTABLE_NINF (-13)
 
 #define yytable_value_is_error(Yyn) \
   0
@@ -669,10 +688,11 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-     -16,     9,    -7,   -16,   -15,   -16,   -16,   -16,   -16,   -16,
-     -16,     8,   -16,    -1,     0,    -3,     1,     2,     3,    -2,
-       4,     6,   -16,     7,   -16,    12,   -16,    10,    -2,   -16,
-     -16,   -16
+     -15,    10,    -6,   -15,   -14,   -15,   -15,   -15,   -15,   -15,
+     -15,     9,   -15,     0,     1,     2,     3,   -15,     4,    -1,
+      -4,     5,   -15,     7,   -15,    13,    -1,   -15,     8,    -1,
+     -15,   -15,    11,    -1,   -15,   -15,    18,   -15,   -15,    12,
+      15,    18,   -15,   -15
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -680,24 +700,25 @@ static const yytype_int8 yypact[] =
    means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       5,     0,     0,     1,    15,    16,    17,    18,     7,     2,
-       4,     0,     8,     0,     0,     0,     9,     0,     0,     0,
-       0,     0,    15,    10,    12,     0,     3,     0,     0,    14,
-       6,    13
+       6,     0,     0,     1,    16,    17,    18,    19,     8,     2,
+       5,     0,     9,     0,     0,     0,    10,     3,     0,     0,
+       0,     0,    16,    11,    13,     0,    21,     4,     0,     0,
+      15,    23,     0,    21,     7,    14,     0,    20,    22,    25,
+       0,     0,    24,    26
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -16,   -16,   -16,   -16,   -16,   -16,   -16,   -16,   -16,   -11,
-      19
+     -15,   -15,   -15,   -15,   -15,   -15,   -15,   -15,   -15,   -15,
+       6,    -2,   -15,   -10,   -15,   -15,   -13
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,     1,     9,     2,    10,    11,    18,    19,    23,    24,
-      25
+       0,     1,     9,    20,     2,    10,    11,    18,    19,    23,
+      24,    25,    27,    32,    33,    36,    40
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -705,40 +726,45 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-       4,     5,     6,     7,     8,    22,     5,     6,     7,     3,
-      13,    14,    17,    15,    16,    29,   -11,    31,    21,    20,
-      28,    12,    26,    27,     0,     0,     0,     0,    30
+      12,     4,     5,     6,     7,     8,    22,     5,     6,     7,
+       3,    13,    14,    26,    15,    16,    30,    17,   -12,    21,
+      29,    39,    28,    38,    31,    41,    34,    42,    43,    37,
+       0,    31,     0,     0,     0,    35
 };
 
 static const yytype_int8 yycheck[] =
 {
-       7,     8,     9,    10,    11,     7,     8,     9,    10,     0,
-      25,     3,    15,    14,    14,     3,    15,    28,    15,    17,
-      13,     2,    18,    17,    -1,    -1,    -1,    -1,    18
+       2,     7,     8,     9,    10,    11,     7,     8,     9,    10,
+       0,    25,     3,    17,    14,    14,     3,    15,    15,    15,
+      13,     3,    17,    33,    26,    13,    18,    12,    41,    18,
+      -1,    33,    -1,    -1,    -1,    29
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,    27,    29,     0,     7,     8,     9,    10,    11,    28,
-      30,    31,    36,    25,     3,    14,    14,    15,    32,    33,
-      17,    15,     7,    34,    35,    36,    18,    17,    13,     3,
-      18,    35
+       0,    27,    30,     0,     7,     8,     9,    10,    11,    28,
+      31,    32,    37,    25,     3,    14,    14,    15,    33,    34,
+      29,    15,     7,    35,    36,    37,    17,    38,    17,    13,
+       3,    37,    39,    40,    18,    36,    41,    18,    39,     3,
+      42,    13,    12,    42
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    26,    27,    28,    29,    29,    30,    31,    31,    33,
-      32,    32,    34,    34,    35,    36,    36,    36,    36
+       0,    26,    27,    29,    28,    30,    30,    31,    32,    32,
+      34,    33,    33,    35,    35,    36,    37,    37,    37,    37,
+      38,    39,    39,    41,    40,    42,    42
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     2,     6,     2,     0,     7,     1,     1,     0,
-       2,     0,     1,     3,     2,     1,     1,     1,     1
+       0,     2,     2,     0,     6,     2,     0,     7,     1,     1,
+       0,     2,     0,     1,     3,     2,     1,     1,     1,     1,
+       3,     0,     2,     0,     4,     1,     3
 };
 
 
@@ -1201,27 +1227,33 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-  case 3: /* MAINFUNCTION: INT MAIN LPAREN RPAREN LBRACE RBRACE  */
-#line 123 "parser.y"
+  case 3: /* $@1: %empty  */
+#line 133 "parser.y"
         {function_type="int"; 
         has_return_statement = false;
+        }
+#line 1236 "parser.tab.c"
+    break;
 
+  case 4: /* MAINFUNCTION: INT MAIN LPAREN RPAREN $@1 COMPOUNDSTMT  */
+#line 139 "parser.y"
+        {
             if (function_type != "void" && !has_return_statement) {
                     //yyerror("Non-void function must end with a return statement");
                 }
         }
-#line 1214 "parser.tab.c"
+#line 1246 "parser.tab.c"
     break;
 
-  case 4: /* FUNCTIONDECLARATIONS: FUNCTIONDECLARATIONS FUNCTIONDEC  */
-#line 133 "parser.y"
+  case 5: /* FUNCTIONDECLARATIONS: FUNCTIONDECLARATIONS FUNCTIONDEC  */
+#line 147 "parser.y"
                                            {
         }
-#line 1221 "parser.tab.c"
+#line 1253 "parser.tab.c"
     break;
 
-  case 6: /* FUNCTIONDEC: RETURNTYPE ID LPAREN PARAMETERS RPAREN LBRACE RBRACE  */
-#line 139 "parser.y"
+  case 7: /* FUNCTIONDEC: RETURNTYPE ID LPAREN PARAMETERS RPAREN LBRACE RBRACE  */
+#line 153 "parser.y"
                                                              {
             function_type=(yyvsp[-6].strval);
             has_return_statement = false;
@@ -1232,69 +1264,87 @@ yyreduce:
             }
             GlobalTable.AddFunctionToTable((yyvsp[-5].strval),currentSignature,function_type);
         }
-#line 1236 "parser.tab.c"
+#line 1268 "parser.tab.c"
     break;
 
-  case 7: /* RETURNTYPE: VOID  */
-#line 154 "parser.y"
+  case 8: /* RETURNTYPE: VOID  */
+#line 168 "parser.y"
                     {(yyval.strval)=strdup("void");}
-#line 1242 "parser.tab.c"
+#line 1274 "parser.tab.c"
     break;
 
-  case 8: /* RETURNTYPE: BaseType  */
-#line 155 "parser.y"
+  case 9: /* RETURNTYPE: BaseType  */
+#line 169 "parser.y"
                    {(yyval.strval)=(yyvsp[0].strval);}
-#line 1248 "parser.tab.c"
+#line 1280 "parser.tab.c"
     break;
 
-  case 9: /* $@1: %empty  */
-#line 157 "parser.y"
+  case 10: /* $@2: %empty  */
+#line 171 "parser.y"
                {sig_index=0;}
-#line 1254 "parser.tab.c"
+#line 1286 "parser.tab.c"
     break;
 
-  case 10: /* PARAMETERS: $@1 PARAMETERLIST  */
-#line 157 "parser.y"
+  case 11: /* PARAMETERS: $@2 PARAMETERLIST  */
+#line 171 "parser.y"
                                            {sig_index=0;}
-#line 1260 "parser.tab.c"
+#line 1292 "parser.tab.c"
     break;
 
-  case 14: /* PARAMETER: BaseType ID  */
-#line 163 "parser.y"
+  case 15: /* PARAMETER: BaseType ID  */
+#line 177 "parser.y"
                            {
         currentSignature.param_types.push_back((yyvsp[-1].strval));
         currentSignature.param_id.push_back((yyvsp[0].strval));
         sig_index++;
     }
-#line 1270 "parser.tab.c"
+#line 1302 "parser.tab.c"
     break;
 
-  case 15: /* BaseType: INT  */
-#line 170 "parser.y"
+  case 16: /* BaseType: INT  */
+#line 184 "parser.y"
            { (yyval.strval) = strdup("int");  }
-#line 1276 "parser.tab.c"
+#line 1308 "parser.tab.c"
     break;
 
-  case 16: /* BaseType: BOOL  */
-#line 171 "parser.y"
+  case 17: /* BaseType: BOOL  */
+#line 185 "parser.y"
            { (yyval.strval) = strdup("bool"); }
-#line 1282 "parser.tab.c"
+#line 1314 "parser.tab.c"
     break;
 
-  case 17: /* BaseType: CHAR  */
-#line 172 "parser.y"
+  case 18: /* BaseType: CHAR  */
+#line 186 "parser.y"
            { (yyval.strval) = strdup("char"); }
-#line 1288 "parser.tab.c"
+#line 1320 "parser.tab.c"
     break;
 
-  case 18: /* BaseType: STRING  */
-#line 173 "parser.y"
+  case 19: /* BaseType: STRING  */
+#line 187 "parser.y"
            { (yyval.strval) = strdup("string"); }
-#line 1294 "parser.tab.c"
+#line 1326 "parser.tab.c"
+    break;
+
+  case 23: /* $@3: %empty  */
+#line 198 "parser.y"
+             { current_type = (yyvsp[0].strval); }
+#line 1332 "parser.tab.c"
+    break;
+
+  case 25: /* IDLIST: ID  */
+#line 201 "parser.y"
+       { GlobalTable.AddId((yyvsp[0].strval), current_type); }
+#line 1338 "parser.tab.c"
+    break;
+
+  case 26: /* IDLIST: ID COMMA IDLIST  */
+#line 202 "parser.y"
+                    { GlobalTable.AddId((yyvsp[-2].strval), current_type); }
+#line 1344 "parser.tab.c"
     break;
 
 
-#line 1298 "parser.tab.c"
+#line 1348 "parser.tab.c"
 
       default: break;
     }
@@ -1487,7 +1537,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 179 "parser.y"
+#line 204 "parser.y"
 
 
     int main() {
