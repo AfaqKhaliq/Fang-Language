@@ -16,7 +16,6 @@
         string return_type;
         vector<string> param_types;
         vector<string> param_id;
-        int param_count;
     };
 
     class SymbolInfo {
@@ -72,7 +71,9 @@
             this->Parent = nullptr;
         }
        
-
+        SymbolTable(SymbolTable* parentScope) {
+            this->Parent = parentScope;
+        }
    
         ~SymbolTable() {}
 
@@ -93,7 +94,7 @@
         }
         void AddFunctionToTable(const char* id, FunctionSignature Sig, string return_type) {
             SymbolInfo func;
-            func.type = return_type;
+            func.return_type = return_type;
             func.isFunc = true;
             func.param_types = Sig.param_types;
             func.param_id = Sig.param_id;
@@ -107,25 +108,74 @@
                 cout<<i<<" ";
             }
             this->Table[name] = func;
+
         }
+
+        char* lookup(const string& name) {
+            if (Table.count(name)) {
+                return strdup(Table[name].type.c_str());  // always strdup because parser expects char*
+            } else if (Parent) {
+                return Parent->lookup(name);
+            } else {
+                return nullptr;  // not found
+            }
+        }
+
+        void IfExist(const string& name) {
+            if (Table.count(name)) {
+                cout << "Identifier " << name << " exists in current scope" << endl;
+            } else {
+                cout << "Identifier " << name << " not declared in current scope" << endl;
+                yyerror(("Identifier '" + name + "' not declared").c_str());
+            }
+        }
+
+        SymbolInfo* LookupFunction(const string& name) {
+            if (Table.count(name) && Table[name].isFunc) {
+                return &Table[name];
+            } else if (Parent) {
+                return Parent->LookupFunction(name);
+            } else {
+                return nullptr;
+            }
+        }
+
+
+
     };
+
+    FunctionSignature* checkFunctionCall;
+    int argument_index=0;
+    string function_type="NULL";
+    FunctionSignature currentSignature;
+    char *function_type;
+    bool has_return_statement;
+    SymbolTable* currentTable=new SymbolTable();
+    
+    void createScope() {
+        SymbolTable* newTable = new SymbolTable(currentTable);
+        currentTable = newTable;
+    }
+
+
+    void exitScope() {
+        SymbolTable* old = currentTable;
+        currentTable = currentTable->parent;
+        delete old; 
+    }
+
+
+
+
     extern FILE* yyin;
     int yylex(void);
     int yyerror(const char *s);
 
     int sig_index=0;
-    string function_type="NULL";
-    bool has_return_statement;
-    SymbolTable GlobalTable; 
-    FunctionSignature currentSignature;
     char* current_type;  // used for inherited attribute (type for IDLIST)
     bool parsing_arguments = false;
-    int argument_index = 0;
-    char current_function[64];
-    string expected_types;
 
 
-    int expected_count = 0;
 
  
 
@@ -145,11 +195,11 @@
     %token PLUS MINUS MUL DIV MODULO
     %token <strval> TRUE FALSE
     %type <strval> BaseType  RETURNTYPE IDLIST 
-    %type <type> EXPRSTMT
+    %type <strval> EXPRSTMT
     %type <strval> Expression NotExpr RelationalExpr AdditiveExpr MultExpr UnaryExpr Factor 
     %token PRINT SCAN 
     %token IF ELSE WHILE RETURN MAIN
-    %type <strval> AndExpr 
+    %type <strval> AndExpr FunctionCall 
     %start Program
     %%
 
@@ -158,46 +208,54 @@
 
     MAINFUNCTION:
         INT MAIN LPAREN RPAREN 
-
-        {function_type="int"; 
-        has_return_statement = false;
-        }
-        
-        COMPOUNDSTMT
-        
         {
-            if (function_type != "void" && !has_return_statement) {
-                    //yyerror("Non-void function must end with a return statement");
-                }
+            function_type="int"; 
+            has_return_statement = false;
+            createScope();
+        }
+        COMPOUNDSTMT
+        {
+            exitScope();
+            if (!has_return_statement) {
+                    yyerror("Non-void function must end with a return statement");
+            }
         }
     ;
 
     FUNCTIONDECLARATIONS:
-        FUNCTIONDECLARATIONS   FUNCTIONDEC {
-        }
-    | /* empty */
+        FUNCTIONDECLARATIONS FUNCTIONDEC
+        | //EMPTY
     ;
 
     FUNCTIONDEC:
-        RETURNTYPE ID LPAREN PARAMETERS RPAREN LBRACE RBRACE {
+        RETURNTYPE ID LPAREN
+        {
+            currentSignature.param_types.clear();
+            currentSignature.param_id.clear();
+        }
+        PARAMETERS
+        {
+            currentTable->AddFunctionToTable($2,currentSignature,$1);
+        } 
+        RPAREN
+        {
+            createScope();
             function_type=$1;
             has_return_statement = false;
-
-        
-            if (!has_return_statement) {
-               //yyerror("func() must end with a return statement");
+        } 
+        COMPOUNDSTMT 
+        {
+            exitScope();
+            if ( strcmp($1,"void")!=0 && !has_return_statement ) {
+               yyerror("func() must end with a return statement");
             }
-            GlobalTable.AddFunctionToTable($2,currentSignature,function_type);
         }
     ;
-
-
-
 
     RETURNTYPE:VOID {$$=strdup("void");}
         | BaseType {$$=$1;}
     ;
-    PARAMETERS:{sig_index=0;}PARAMETERLIST {sig_index=0;}
+    PARAMETERS:PARAMETERLIST
         | //ERMPTY
     ;
     PARAMETERLIST:PARAMETER
@@ -206,7 +264,6 @@
     PARAMETER: BaseType ID {
         currentSignature.param_types.push_back($1);
         currentSignature.param_id.push_back($2);
-        sig_index++;
     }
 
 BaseType:
@@ -217,42 +274,169 @@ BaseType:
   ;
 
 COMPOUNDSTMT:
-            LBRACE LOCALDECLARATIONS STMTLIST RBRACE ;
+    LBRACE LOCALDECLARATIONS STMTLIST RBRACE ;
+
 LOCALDECLARATIONS:
-    /* empty */
-  | VarDeclaration LOCALDECLARATIONS
+    VarDeclaration LOCALDECLARATIONS
+    | //EMPTY
 ;
 
 VarDeclaration:
-    BaseType { current_type = $1; } IDLIST SEMICOLON
+    BaseType
+    { current_type = $1; } 
+    IDLIST SEMICOLON
 ;
 IDLIST:
-    ID { GlobalTable.AddId($1, current_type); }
-  | ID COMMA IDLIST { GlobalTable.AddId($1, current_type); }
+    ID
+    { 
+        currentTable->AddId($1, current_type);
+    }
+  | ID
+    {
+        currentTable->AddId($1, current_type);
+    } 
+    COMMA IDLIST
 ;
 
-STMTLIST:{cout<<"\nI am at STMTLIST\n";}STATEMENT STMTLIST 
+STMTLIST:STATEMENT STMTLIST 
     | //EMPTY
 ;
 
 
 
 
-STATEMENT:{cout<<"\nI am at STMT\n";} EXPRSTMT 
-   // | COMPOUNDSTMT
-   // | SELECTIONSTMT
-   // | ITERATIONSTMT
-   // | RETURNSTMT
-   // | IOSTMT
+STATEMENT: EXPRSTMT 
+    |{createScope();} COMPOUNDSTMT {exitScope();}
+    | SELECTIONSTMT
+    | ITERATIONSTMT
+    | RETURNSTMT
+    | IOSTMT
 ;
+
+
+ITERATIONSTMT: WHILE LPAREN Expression RPAREN
+    {
+        if(type_name($3)=="bool")
+            continue;
+        else
+            yyerror("MUST GIVE BOOL EXPRESSION");
+
+    }
+STATEMENT ;
+
+SELECTIONSTMT:IF LPAREN Expression RPAREN MATCHSTMT ELSE MATCHSTMT { 
+    if ($3 != TYPE_BOOL && $3 != TYPE_INT)
+        yyerror("Condition must be bool or int");
+}
+;
+MATCHSTMT:EXPRSTMT
+    |{ createScope(); } COMPOUNDSTMT { exitScope(); }
+    | IF LPAREN Expression RPAREN MATCHSTMT ELSE MATCHSTMT { 
+    if (type_name($3)!=TYPE_BOOL || type_name($3)!=TYPE_INT)
+        yyerror("MUST GIVE BOOL EXPRESSION");
+}
+    | ITERATIONSTMT
+    | RETURNSTMT
+    | IOSTMT
+;
+
+
+RETURNSTMT:
+    RETURN Expression SEMICOLON 
+    {
+        if (function_type != $2)
+            yyerror("Return type does not match function return type");
+        has_return_statement = true;
+
+    }
+  | RETURN SEMICOLON 
+  {
+        if (function_type != TYPE_VOID)
+            yyerror("Non-void function must return a value");
+        has_return_statement = true;
+
+    }
+;
+
+IOSTMT:PRINTSTMT
+    | SCANESTMT
+;
+PRINTSTMT:PRINT LPAREN Expression RPAREN SEMICOLON;
+SCANESTMT:SCAN LPAREN ID {currentTable->IfExist($3)} RPAREN SEMICOLON;
 
 
 EXPRSTMT:
     ID ASSIGN Expression SEMICOLON{
-        string declared_type =GlobalTable.Table[string($1)].type;
+        string declared_type =currentTable->lookup($1);
         cout<<"id assigned value"
         if (declared_type != string($3))
             yyerror("Type mismatch in assignment");
+    }
+;
+
+
+
+FunctionCall:
+    ID {
+        checkFunctionCall = currentTable->LookupFunction($1);
+        if (!checkFunctionCall || !checkFunctionCall->isFunc) {
+            yyerror(("Function '" + string($1) + "' not declared").c_str());
+        } else {
+
+            function_type = checkFunctionCall->type;  // Save return type for $$ later
+            argument_index = 0;
+            parsing_arguments = true;
+        }
+    }
+    LPAREN ARGUMENTS RPAREN {
+        parsing_arguments = false;
+        if (argument_index != checkFunctionCall.param_count) {
+            yyerror("Incorrect number of arguments in function call");
+        } else {
+            $$ = strdup(function_type.c_str());
+        }
+    }
+;
+
+
+
+ARGUMENTS:
+    ARGUMENTSLIST { }
+  | /* empty */   { }
+;
+
+
+
+ARGUMENTSLIST:
+    ARGUMENTSLIST COMMA Expression {
+        if (parsing_arguments) {
+            if (argument_index >= checkFunctionCall.param_types.size()) {
+                yyerror("Too many arguments");
+            } else if (strcmp($3, checkFunctionCall.param_types[argument_index].c_str()) != 0) {
+                char msg[128];
+                sprintf(msg, "Argument %d: expected %s, got %s",
+                        argument_index + 1,
+                        checkFunctionCall.param_types[argument_index].c_str(),
+                        $3);
+                yyerror(msg);
+            }
+            argument_index++;
+        }
+    }
+  | Expression {
+        if (parsing_arguments) {
+            if (argument_index >= checkFunctionCall.param_types.size()) {
+                yyerror("Too many arguments");
+            } else if (strcmp($1, checkFunctionCall.param_types[argument_index].c_str()) != 0) {
+                char msg[128];
+                sprintf(msg, "Argument %d: expected %s, got %s",
+                        argument_index + 1,
+                        checkFunctionCall.param_types[argument_index].c_str(),
+                        $1);
+                yyerror(msg);
+            }
+            argument_index++;
+        }
     }
 ;
 
@@ -370,15 +554,17 @@ Factor:
   | STRINGLITERAL     { $$ = strdup("string"); } 
   | CHARLITERAL       { $$ = strdup("char"); } 
   | TRUE | FALSE      { $$ = strdup("bool"); }
+  | FunctionCall {$$ = strdup($1);}
   | ID {  
-        if (GlobalTable.Table.find($1)==GlobalTable.Table.end()) {
+    char* var=currentTable->lookup($1);
+        if (!var) {
             char msg[128];
             sprintf(msg, "Undeclared variable: %s", $1);
             yyerror(msg);
         }
-        else{ $$=strdup(GlobalTable.Table[string($1)].type.c_str());}
+        else{ $$=strdup(var)}
     }
-  | '(' Expression ')' { $$ = $2; }
+  | LBRACE Expression RBRACE { $$ = $2; }
 ;
 
 
