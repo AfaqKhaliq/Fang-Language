@@ -5,7 +5,7 @@
 #include <stdio.h>
 %}
 
-%option noyywrap
+%option noyywrap 
 
 IDENTIFIER [a-zA-Z][a-zA-Z0-9_]*
 NUMBER     [0-9]+

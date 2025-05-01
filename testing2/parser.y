@@ -94,7 +94,7 @@
         }
         void AddFunctionToTable(const char* id, FunctionSignature Sig, string return_type) {
             SymbolInfo func;
-            func.return_type = return_type;
+            func.type = return_type;
             func.isFunc = true;
             func.param_types = Sig.param_types;
             func.param_id = Sig.param_id;
@@ -126,7 +126,7 @@
                 cout << "Identifier " << name << " exists in current scope" << endl;
             } else {
                 cout << "Identifier " << name << " not declared in current scope" << endl;
-                yyerror(("Identifier '" + name + "' not declared").c_str());
+               // yyerror(string("Identifier '" + name + "' not declared").c_str());
             }
         }
 
@@ -144,11 +144,11 @@
 
     };
 
-    FunctionSignature* checkFunctionCall;
+    SymbolInfo* checkFunctionCall;
     int argument_index=0;
     string function_type="NULL";
     FunctionSignature currentSignature;
-    char *function_type;
+
     bool has_return_statement;
     SymbolTable* currentTable=new SymbolTable();
     
@@ -160,7 +160,7 @@
 
     void exitScope() {
         SymbolTable* old = currentTable;
-        currentTable = currentTable->parent;
+        currentTable = currentTable->Parent;
         delete old; 
     }
 
@@ -307,13 +307,13 @@ STMTLIST:STATEMENT STMTLIST
 
 STATEMENT: EXPRSTMT 
     |{createScope();} COMPOUNDSTMT {exitScope();}
-    | SELECTIONSTMT
-    | ITERATIONSTMT
+    |// SELECTIONSTMT
+    | //ITERATIONSTMT
     | RETURNSTMT
-    | IOSTMT
+    |// IOSTMT
 ;
 
-
+/*
 ITERATIONSTMT: WHILE LPAREN Expression RPAREN
     {
         if(type_name($3)=="bool")
@@ -340,7 +340,7 @@ MATCHSTMT:EXPRSTMT
     | IOSTMT
 ;
 
-
+*/
 RETURNSTMT:
     RETURN Expression SEMICOLON 
     {
@@ -362,13 +362,13 @@ IOSTMT:PRINTSTMT
     | SCANESTMT
 ;
 PRINTSTMT:PRINT LPAREN Expression RPAREN SEMICOLON;
-SCANESTMT:SCAN LPAREN ID {currentTable->IfExist($3)} RPAREN SEMICOLON;
+SCANESTMT:SCAN LPAREN ID {currentTable->IfExist($3);} RPAREN SEMICOLON;
 
 
 EXPRSTMT:
     ID ASSIGN Expression SEMICOLON{
         string declared_type =currentTable->lookup($1);
-        cout<<"id assigned value"
+        cout<<"id assigned value";
         if (declared_type != string($3))
             yyerror("Type mismatch in assignment");
     }
@@ -390,7 +390,7 @@ FunctionCall:
     }
     LPAREN ARGUMENTS RPAREN {
         parsing_arguments = false;
-        if (argument_index != checkFunctionCall.param_count) {
+        if (argument_index != checkFunctionCall->param_id.size()) {
             yyerror("Incorrect number of arguments in function call");
         } else {
             $$ = strdup(function_type.c_str());
@@ -410,13 +410,13 @@ ARGUMENTS:
 ARGUMENTSLIST:
     ARGUMENTSLIST COMMA Expression {
         if (parsing_arguments) {
-            if (argument_index >= checkFunctionCall.param_types.size()) {
+            if (argument_index >= checkFunctionCall->param_types.size()) {
                 yyerror("Too many arguments");
-            } else if (strcmp($3, checkFunctionCall.param_types[argument_index].c_str()) != 0) {
+            } else if (strcmp($3, checkFunctionCall->param_types[argument_index].c_str()) != 0) {
                 char msg[128];
                 sprintf(msg, "Argument %d: expected %s, got %s",
                         argument_index + 1,
-                        checkFunctionCall.param_types[argument_index].c_str(),
+                        checkFunctionCall->param_types[argument_index].c_str(),
                         $3);
                 yyerror(msg);
             }
@@ -425,13 +425,13 @@ ARGUMENTSLIST:
     }
   | Expression {
         if (parsing_arguments) {
-            if (argument_index >= checkFunctionCall.param_types.size()) {
+            if (argument_index >= checkFunctionCall->param_types.size()) {
                 yyerror("Too many arguments");
-            } else if (strcmp($1, checkFunctionCall.param_types[argument_index].c_str()) != 0) {
+            } else if (strcmp($1, checkFunctionCall->param_types[argument_index].c_str()) != 0) {
                 char msg[128];
                 sprintf(msg, "Argument %d: expected %s, got %s",
                         argument_index + 1,
-                        checkFunctionCall.param_types[argument_index].c_str(),
+                        checkFunctionCall->param_types[argument_index].c_str(),
                         $1);
                 yyerror(msg);
             }
@@ -562,7 +562,7 @@ Factor:
             sprintf(msg, "Undeclared variable: %s", $1);
             yyerror(msg);
         }
-        else{ $$=strdup(var)}
+        else{ $$=strdup(var);}
     }
   | LBRACE Expression RBRACE { $$ = $2; }
 ;

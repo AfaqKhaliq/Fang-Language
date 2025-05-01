@@ -10,7 +10,7 @@ enum Type {
     TYPE_STRING,
     TYPE_CHAR,
     TYPE_VOID,
-    TYPE_ERROR
+    TYPE_ERROR,
 };
 
 struct FunctionSignature {
