@@ -11,6 +11,7 @@
     #include<variant>
     using namespace std;
 
+
     
     struct FunctionSignature {
         string return_type;
@@ -80,16 +81,35 @@
         void SetParent(SymbolTable* P) {
             this->Parent = P;
         }
+        void AddId(FunctionSignature& Sig) {
+            for (int i = 0; i < Sig.param_id.size(); i++) {
+                const string& id = Sig.param_id[i];
+                const string& type = Sig.param_types[i];
+
+                if (this->Table.count(id) == 0) {
+                    SymbolInfo info;
+                    info.type = type;
+                    this->Table[id] = info;
+                    cout << "Parameter '" << id << "' added with type " << type << endl;
+                } else {
+                    cout << "Error: parameter '" << id << "' already declared in this scope" << endl;
+                    exit(1);
+                }
+            }
+        }
+
+
         void AddId(const char* id,string type){
             string name(id);
             if (this->Table.find(id)==Table.end()){
                 SymbolInfo ID;
                 ID.type=type;
                 this->Table[name]=ID;
-                cout<<"\nadded" << name<<" to table";
+                cout << "Parameter '" << name << "' added with type " << type << endl;
             }
             else{
-                cout<< name << "already decalred in thi scope";
+                cout<< name << "Already decalred in thi scope"<<endl;
+                exit(1);
             }
         }
         void AddFunctionToTable(const char* id, FunctionSignature Sig, string return_type) {
@@ -107,6 +127,7 @@
             for (auto i:func.param_types){
                 cout<<i<<" ";
             }
+            cout<<endl;
             this->Table[name] = func;
 
         }
@@ -195,7 +216,7 @@
     %token PLUS MINUS MUL DIV MODULO
     %token <strval> TRUE FALSE
     %type <strval> BaseType  RETURNTYPE IDLIST 
-    %type <strval> EXPRSTMT
+    %type <strval> EXPRSTMT RETURNSTMT
     %type <strval> Expression NotExpr RelationalExpr AdditiveExpr MultExpr UnaryExpr Factor 
     %token PRINT SCAN 
     %token IF ELSE WHILE RETURN MAIN
@@ -240,7 +261,11 @@
         RPAREN
         {
             createScope();
+            currentTable->AddId(currentSignature);
             function_type=$1;
+            //cout<<function_type;
+            //printf("Function return type = %s\n", function_type.c_str());
+            //fflush(stdout);
             has_return_statement = false;
         } 
         COMPOUNDSTMT 
@@ -307,56 +332,57 @@ STMTLIST:STATEMENT STMTLIST
 
 STATEMENT: EXPRSTMT 
     |{createScope();} COMPOUNDSTMT {exitScope();}
-    |// SELECTIONSTMT
-    | //ITERATIONSTMT
-    | RETURNSTMT
-    |// IOSTMT
-;
-
-/*
-ITERATIONSTMT: WHILE LPAREN Expression RPAREN
-    {
-        if(type_name($3)=="bool")
-            continue;
-        else
-            yyerror("MUST GIVE BOOL EXPRESSION");
-
-    }
-STATEMENT ;
-
-SELECTIONSTMT:IF LPAREN Expression RPAREN MATCHSTMT ELSE MATCHSTMT { 
-    if ($3 != TYPE_BOOL && $3 != TYPE_INT)
-        yyerror("Condition must be bool or int");
-}
-;
-MATCHSTMT:EXPRSTMT
-    |{ createScope(); } COMPOUNDSTMT { exitScope(); }
-    | IF LPAREN Expression RPAREN MATCHSTMT ELSE MATCHSTMT { 
-    if (type_name($3)!=TYPE_BOOL || type_name($3)!=TYPE_INT)
-        yyerror("MUST GIVE BOOL EXPRESSION");
-}
+   // |// SELECTIONSTMT
     | ITERATIONSTMT
     | RETURNSTMT
     | IOSTMT
 ;
 
-*/
-RETURNSTMT:
-    RETURN Expression SEMICOLON 
+
+ITERATIONSTMT: WHILE LPAREN Expression RPAREN
     {
-        if (function_type != $2)
-            yyerror("Return type does not match function return type");
-        has_return_statement = true;
-
+        if(std::string($3)!="bool")
+            yyerror("Must Give bool expression for while loop");
     }
-  | RETURN SEMICOLON 
-  {
-        if (function_type != TYPE_VOID)
-            yyerror("Non-void function must return a value");
-        has_return_statement = true;
+STATEMENT ;
 
+// SELECTIONSTMT:IF LPAREN Expression RPAREN MATCHSTMT ELSE MATCHSTMT { 
+//     if ($3 != TYPE_BOOL && $3 != TYPE_INT)
+//         yyerror("Condition must be bool or int");
+// }
+// ;
+// MATCHSTMT:EXPRSTMT
+//     |{ createScope(); } COMPOUNDSTMT { exitScope(); }
+//     | IF LPAREN Expression RPAREN MATCHSTMT ELSE MATCHSTMT { 
+//     if (type_name($3)!=TYPE_BOOL || type_name($3)!=TYPE_INT)
+//         yyerror("MUST GIVE BOOL EXPRESSION");
+// }
+//     | ITERATIONSTMT
+//     | RETURNSTMT
+//     | IOSTMT
+// ;
+
+
+
+RETURNSTMT:
+    RETURN Expression SEMICOLON {
+        if (function_type != std::string($2)) {
+            printf("Return error: expected %s, got %s\n", function_type.c_str(), $2);
+            fflush(stdout);
+            yyerror("Return type does not match function return type");
+        }
+        has_return_statement = true;
+    }
+  | RETURN SEMICOLON {
+        if (function_type != "void") {
+            printf("Return error: expected void, got empty return\n");
+            fflush(stdout);
+            yyerror("Non-void function must return a value");
+        }
+        has_return_statement = true;
     }
 ;
+
 
 IOSTMT:PRINTSTMT
     | SCANESTMT
@@ -380,7 +406,7 @@ FunctionCall:
     ID {
         checkFunctionCall = currentTable->LookupFunction($1);
         if (!checkFunctionCall || !checkFunctionCall->isFunc) {
-            yyerror(("Function '" + string($1) + "' not declared").c_str());
+            yyerror(("Function '" + std::string($1) + "' not declared").c_str());
         } else {
 
             function_type = checkFunctionCall->type;  // Save return type for $$ later
@@ -442,11 +468,10 @@ ARGUMENTSLIST:
 
 Expression:
     Expression OR AndExpr {
-        if (strcmp($1, "bool") == 0 && strcmp($3, "bool") == 0)
-            $$ = "bool";
+        if (std::string($1)=="bool"  && std::string($3)=="bool" )
+            $$ = strdup("bool"); 
         else {
             yyerror("OR operands must be bool");
-            $$ = "error";
         }
     }
   | AndExpr { $$ = $1; }
@@ -457,11 +482,10 @@ Expression:
 
 AndExpr:
     AndExpr AND NotExpr {
-        if (strcmp($1, "bool") == 0 && strcmp($3, "bool") == 0)
-            $$ = "bool";
+        if (std::string($1)=="bool"  && std::string($3)=="bool" )
+            $$ = strdup("bool"); 
         else {
             yyerror("AND operands must be bool");
-            $$ = "error";
         }
     }
   | NotExpr { $$ = $1; }
@@ -469,11 +493,10 @@ AndExpr:
 
 NotExpr: NOT NotExpr
       {
-        if (strcmp($2, "bool") == 0)
-            $$ = "bool";
+        if (std::string($2)=="bool")
+            $$ = strdup("bool"); 
         else {
             yyerror("Operand of 'not' must be bool");
-            $$ = "error";
         }
     }
   | RelationalExpr { $$ = $1; }
@@ -484,11 +507,10 @@ RelationalExpr:
         $$ = $1;
     }
   | AdditiveExpr RELOP AdditiveExpr {
-        if (strcmp($1, "int") == 0 && strcmp($3, "int") == 0)
-            $$ = "bool";
+        if (std::string($1)=="int" && std::string($3)=="int")
+            $$ = strdup("bool"); 
         else {
             yyerror("Comparison operands must be int");
-            $$ = "error";
         }
     }
 ;
@@ -504,11 +526,10 @@ RELOP:
 
 AdditiveExpr:
     AdditiveExpr ARTHOP MultExpr {
-        if (strcmp($1, "int") == 0 && strcmp($3, "int") == 0)
-            $$ = "int";
+        if (std::string($1)=="int" && std::string($3)=="int")
+            $$ = strdup("int");
         else {
             yyerror("Operands of '+' must be int");
-            $$ = "error";
         }
     }
   | MultExpr { $$ = $1; }
@@ -521,11 +542,10 @@ ARTHOP:
 
 MultExpr:
     MultExpr MULOP UnaryExpr {
-        if (strcmp($1, "int") == 0 && strcmp($3, "int") == 0)
-            $$ = "int";
+        if (std::string($1)=="int"  && std::string($3)=="int")
+            $$ = strdup("int");
         else {
             yyerror("Operands of '*' must be int");
-            $$ = "error";
         }
     }
   | UnaryExpr { $$ = $1; }
@@ -539,12 +559,10 @@ MULOP:
 
 UnaryExpr:
     MINUS Factor {
-        if (strcmp($2, "int") == 0)
-            $$ = "int";
-        else {
+        if (std::string($2) == "int")
+            $$ = strdup("int");
+        else
             yyerror("Unary minus only allowed on int");
-            $$ = "error";
-        }
     }
   | Factor { $$ = $1; }
 ;
@@ -583,5 +601,6 @@ yyin = fp;
 
     int yyerror(const char *s) {
         fprintf(stderr, "Parser Error: %s\n", s);
+        //exit(1);
         return 0;
     }
