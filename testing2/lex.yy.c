@@ -367,12 +367,12 @@ static const flex_int16_t yy_accept[97] =
     {   0,
         0,    0,   40,   38,   35,   35,   38,   38,   34,   38,
        22,   23,   32,   30,   19,   31,   33,   13,   38,   18,
-       25,   38,   24,   14,   14,   14,   14,   14,   14,   14,
+       27,   38,   26,   14,   14,   14,   14,   14,   14,   14,
        14,   14,   14,   14,   20,   21,   35,   29,    0,   15,
-        0,    0,    0,    0,   36,   13,   17,   27,   28,   26,
+        0,    0,    0,    0,   37,   13,   17,   25,   28,   24,
        14,   14,   14,   14,    6,   14,   14,   14,   14,   14,
-       14,   14,   14,   16,    0,    0,   36,   14,   14,   14,
-        1,   14,   14,   14,   14,   14,   14,   14,   37,    2,
+       14,   14,   14,   16,    0,    0,   37,   14,   14,   14,
+        1,   14,   14,   14,   14,   14,   14,   14,   36,    2,
         4,    7,    5,   14,   14,   12,   14,   10,   14,   11,
        14,   14,    8,    9,    3,    0
 
@@ -915,22 +915,22 @@ YY_RULE_SETUP
 case 24:
 YY_RULE_SETUP
 #line 43 "scanner.l"
-{ return MORETHAN; }
+{ return MOREANDEQUAL; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
 #line 44 "scanner.l"
-{ return LESSTHAN; }
+{ return LESSANDEQUAL; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
 #line 45 "scanner.l"
-{ return MOREANDEQUAL; }
+{ return MORETHAN; }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
 #line 46 "scanner.l"
-{ return LESSANDEQUAL; }
+{ return LESSTHAN; }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
@@ -974,15 +974,15 @@ YY_RULE_SETUP
 { /* skip */ }
 	YY_BREAK
 case 36:
+/* rule 36 can match eol */
 YY_RULE_SETUP
 #line 55 "scanner.l"
-{ /* single-line comment */ }
+{ /* ignore multi-line comment */ }
 	YY_BREAK
 case 37:
-/* rule 37 can match eol */
 YY_RULE_SETUP
 #line 56 "scanner.l"
-{ /* ignore multi-line comment */ }
+{ /* single-line comment */ }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP

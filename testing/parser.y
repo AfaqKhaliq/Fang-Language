@@ -5,6 +5,7 @@ int yylex(void);
 int yyerror(const char *s);
 char* current_type;
 
+  
 %}
 
 %union {
@@ -50,3 +51,6 @@ int yyerror(const char *s) {
     fprintf(stderr, "Parser Error: %s\n", s);
     return 0;
 }
+
+
+ 

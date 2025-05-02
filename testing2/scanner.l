@@ -40,10 +40,10 @@ WHITESPACE [ \t\r\n]+
 "}"            { return RBRACE; }
 "("            { return LPAREN; }
 ")"            { return RPAREN; }
-">"            { return MORETHAN; }
-"<"            { return LESSTHAN; }
 ">="            { return MOREANDEQUAL; }
 "<="            { return LESSANDEQUAL; }
+">"            { return MORETHAN; }
+"<"            { return LESSTHAN; }
 "=="            { return EQUAL; }
 "!="            { return NOTEQUAL; }
 "+"            { return PLUS; }
@@ -52,8 +52,8 @@ WHITESPACE [ \t\r\n]+
 "/"            { return DIV; }
 "%"            { return MODULO; }
 {WHITESPACE}   { /* skip */ }
-"//".*         { /* single-line comment */ }
 "/*"([^*]|\*+[^*/])*\*+\/   { /* ignore multi-line comment */ }
+"//".*         { /* single-line comment */ }
 
 .              {
                  fprintf(stderr, "Lexical Error: Unknown symbol '%s'\n", yytext);

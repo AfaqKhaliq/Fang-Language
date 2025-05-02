@@ -3,38 +3,28 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-// Optional: You can use this to log if needed
-// FILE* outputFile = stdout;
 %}
 
-%option noyywrap
+%option noyywrap 
 
 IDENTIFIER [a-zA-Z][a-zA-Z0-9_]*
 NUMBER     [0-9]+
 STRING     \"([^\\"]|\\.)*\"
 CHAR       \'([^\\']|\\.)\'
-ARITHMETICOPERATOR [\+\-\*/%]
 ASSIGNMENT := 
-COMPARISON (<=|>=|==|!=|<|>)
 WHITESPACE [ \t\r\n]+
 
 %%
 
 "int"      { return INT; }
 "bool"     { return BOOL; }
-"string"   { return STRINGTYPE; }
+"string"   { return STRING; }
 "char"     { return CHAR; }
 "main"     { return MAIN; }
 "if"       { return IF; }
 "else"     { return ELSE; }
 "while"    { return WHILE; }
 "return"   { return RETURN; }
-"true"     { return TRUE; }
-"false"    { return FALSE; }
-"and"      { return AND; }
-"or"       { return OR; }
-"not"      { return NOT; }
 "void"     { return VOID; }
 "print"    { return PRINT; }
 "scan"     { return SCAN; }
@@ -44,20 +34,29 @@ WHITESPACE [ \t\r\n]+
 {STRING}       { yylval.strval = strdup(yytext); return STRINGLITERAL; }
 {CHAR}         { yylval.strval = strdup(yytext); return CHARLITERAL; }
 {ASSIGNMENT}   { return ASSIGN; }
-{ARITHMETICOPERATOR} { yylval.strval = strdup(yytext); return ARITHOP; }
-{COMPARISON}   { yylval.strval = strdup(yytext); return COMPOP; }
 ";"            { return SEMICOLON; }
 ","            { return COMMA; }
 "{"            { return LBRACE; }
 "}"            { return RBRACE; }
 "("            { return LPAREN; }
 ")"            { return RPAREN; }
+">="            { return MOREANDEQUAL; }
+"<="            { return LESSANDEQUAL; }
+">"            { return MORETHAN; }
+"<"            { return LESSTHAN; }
+"=="            { return EQUAL; }
+"!="            { return NOTEQUAL; }
+"+"            { return PLUS; }
+"-"            { return MINUS; }
+"*"            { return MUL; }
+"/"            { return DIV; }
+"%"            { return MODULO; }
 {WHITESPACE}   { /* skip */ }
+"/*"([^*]|\*+[^*/])*\*+\/   { /* ignore multi-line comment */ }
 "//".*         { /* single-line comment */ }
-"/*"([^*]|\*+[^*/])*\*+"/"    { /* multi-line comment */ }
 
 .              {
                  fprintf(stderr, "Lexical Error: Unknown symbol '%s'\n", yytext);
                  exit(1);
               }
-
+%%
