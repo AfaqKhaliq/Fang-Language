@@ -67,16 +67,18 @@
 
 
 /* First part of user prologue.  */
-#line 1 "parser.y"
+#line 13 "parser.y"
 
 #include <stdio.h>
 #include "symbol_table.h"
+#include <string>
 int yylex(void);
 int yyerror(const char *s);
 char* current_type;
 
+  
 
-#line 80 "parser.tab.c"
+#line 82 "parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -505,7 +507,7 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int8 yyrline[] =
 {
-       0,    27,    27,    27,    31,    32,    35,    38,    39,    40
+       0,    42,    42,    42,    46,    47,    50,    53,    54,    55
 };
 #endif
 
@@ -1066,51 +1068,51 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* $@1: %empty  */
-#line 27 "parser.y"
+#line 42 "parser.y"
             {current_type=(yyvsp[0].strval);}
-#line 1072 "parser.tab.c"
+#line 1074 "parser.tab.c"
     break;
 
   case 4: /* IDLIST: ID  */
-#line 31 "parser.y"
+#line 46 "parser.y"
        { insert_symbol((yyvsp[0].strval), current_type); }
-#line 1078 "parser.tab.c"
+#line 1080 "parser.tab.c"
     break;
 
   case 5: /* IDLIST: ID COMMA IDLIST  */
-#line 32 "parser.y"
+#line 47 "parser.y"
                       { insert_symbol((yyvsp[-2].strval), current_type); }
-#line 1084 "parser.tab.c"
+#line 1086 "parser.tab.c"
     break;
 
   case 6: /* BaseType: INT  */
-#line 35 "parser.y"
+#line 50 "parser.y"
         {
         (yyval.strval) = "int";
     }
-#line 1092 "parser.tab.c"
+#line 1094 "parser.tab.c"
     break;
 
   case 7: /* BaseType: BOOL  */
-#line 38 "parser.y"
+#line 53 "parser.y"
            { (yyval.strval) = "Bool"; }
-#line 1098 "parser.tab.c"
+#line 1100 "parser.tab.c"
     break;
 
   case 8: /* BaseType: CHAR  */
-#line 39 "parser.y"
+#line 54 "parser.y"
            { (yyval.strval) = "char"; }
-#line 1104 "parser.tab.c"
+#line 1106 "parser.tab.c"
     break;
 
   case 9: /* BaseType: STRING  */
-#line 40 "parser.y"
+#line 55 "parser.y"
              { (yyval.strval) = "string"; }
-#line 1110 "parser.tab.c"
+#line 1112 "parser.tab.c"
     break;
 
 
-#line 1114 "parser.tab.c"
+#line 1116 "parser.tab.c"
 
       default: break;
     }
@@ -1303,7 +1305,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 43 "parser.y"
+#line 58 "parser.y"
    // ← OPTIONAL: main, yyerror, etc.
 
 int main() {
@@ -1314,3 +1316,6 @@ int yyerror(const char *s) {
     fprintf(stderr, "Parser Error: %s\n", s);
     return 0;
 }
+
+
+ 
