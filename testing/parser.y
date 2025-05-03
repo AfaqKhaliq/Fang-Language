@@ -382,7 +382,7 @@ STMTLIST:STATEMENT STMTLIST
 
 
 STATEMENT: EXPRSTMT  {$$ = currentCodeLine}
-    |{createScope();} COMPOUNDSTMT {exitScope();$$ =$1}
+    |{createScope();} COMPOUNDSTMT {exitScope();$$ =$2}
     | SELECTIONSTMT {$$ = currentCodeLine}
     | ITERATIONSTMT {$$ = currentCodeLine}
     | RETURNSTMT {$$ = currentCodeLine}
@@ -394,7 +394,7 @@ ITERATIONSTMT:
     WHILE LPAREN {$<intval>$ = currentCodeLine; 
             // Save the line number where the condition starts
     } Expression RPAREN {
-        if (std::string($3->type) != "bool") {
+        if (std::string($4->type) != "bool") {
             yyerror("While condition must be bool");
         }
 
@@ -402,13 +402,13 @@ ITERATIONSTMT:
     }
     STATEMENT {
         // Backpatch truelist of the condition to start of body
-        backpatch($3->truelist, $6->line);
+        backpatch($4->truelist, $7);
 
         // Add jump back to condition after body
         Code[currentCodeLine++] = "goto " + std::to_string($<intval>5);
 
         // Mark falselist (loop exit) to next instruction
-        backpatch($3->falselist, currentCodeLine); //next line
+        backpatch($4->falselist, currentCodeLine); //next line
     }
 ;
 
@@ -418,18 +418,18 @@ SELECTIONSTMT:
         $<intval>$ = currentCodeLine; 
         // Save the line number where the condition starts
     } Expression RPAREN {
-        if (std::string($3->type) != "bool") {
+        if (std::string($4->type) != "bool") {
             yyerror("Condition must be bool");
         }
     }
     MATCHSTMT {
         int afterIf = currentCodeLine++;
         Code[afterIf] = "goto "; // Jump over ELSE
-        $<intval>$ = afterIf;
-        backpatch($3->truelist, $6->line);
+        $<intval>$ = afterIf;//n MARKER
+        backpatch($4->truelist, $7);
     }
     ELSE {
-        backpatch($3->falselist, currentCodeLine);
+        backpatch($4->falselist, currentCodeLine);
     }
     MATCHSTMT {
         backpatch(MakeList($<intval>8), currentCodeLine); // Fill jump over ELSE
@@ -437,7 +437,7 @@ SELECTIONSTMT:
 ;
 
 MATCHSTMT:EXPRSTMT {$$ = currentCodeLine}
-    |{ createScope(); } COMPOUNDSTMT { exitScope();$$ = $1}
+    |{ createScope(); } COMPOUNDSTMT { exitScope();$$ = $2}
     | IF LPAREN Expression RPAREN MATCHSTMT ELSE MATCHSTMT { 
     if (std::string($3->type) != "bool")
         yyerror("MUST GIVE BOOL EXPRESSION");
