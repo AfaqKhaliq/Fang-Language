@@ -25,12 +25,28 @@
     #include <vector>
     #include<variant>
     #include<sstream>
+    #include <fstream>
     using namespace std;
 
  
 
     int currentCodeLine=0;
     vector<string> Code(1000);
+
+    void saveTACToFile(const string& filename) {
+        ofstream outFile(filename);
+        if (!outFile) {
+            cerr << "Error: Could not open file " << filename << " for writing.\n";
+            return;
+        }
+
+        for (int i = 0; i < currentCodeLine; ++i) {
+            outFile << i << ": " << Code[i] << "\n";
+        }
+
+        outFile.close();
+        cout << "TAC saved to " << filename << endl;
+    }
 
     void backpatch(const std::vector<int>* PatchList, int target) {
             for (auto i : *PatchList) {
@@ -189,11 +205,11 @@
             }
         }
 
-        void IfExist(const string& name) {
+        bool IfExist(const string& name) {
             if (Table.count(name)) {
-                cout << "Identifier " << name << " exists in current scope" << endl;
+                return true;
             } else {
-                cout << "Identifier " << name << " not declared in current scope" << endl;
+                return false;
                // yyerror(string("Identifier '" + name + "' not declared").c_str());
             }
         }
@@ -362,22 +378,26 @@ LOCALDECLARATIONS:
 
 VarDeclaration:
     BaseType
-    { current_type = $1; } 
+    {
+        current_type = $1;
+    } 
     IDLIST SEMICOLON
 ;
 
-
 IDLIST:
     ID
-    { 
+    {
         currentTable->AddId($1, current_type);
+        Code[currentCodeLine++] = "declare " + std::string($1) + " : " + current_type;
     }
   | ID
     {
         currentTable->AddId($1, current_type);
+        Code[currentCodeLine++] = "declare " + std::string($1) + " : " + current_type;
     } 
     COMMA IDLIST
 ;
+
 
 STMTLIST:STATEMENT STMTLIST 
     | //EMPTY
@@ -492,7 +512,10 @@ PRINTSTMT:
 
 SCANESTMT:
     SCAN LPAREN ID {
-        currentTable->IfExist($3);  
+        if(!currentTable->IfExist($3))
+        {
+            yyerror("Identifier does not exist");
+        } 
     } RPAREN SEMICOLON {
         Code[currentCodeLine++] = "scan " + std::string($3);
     }
@@ -764,10 +787,11 @@ Factor:
             sprintf(msg, "Undeclared variable: %s", $1);
             yyerror(msg);
         }
-        else{    
+        else{   
+            $$ = new Attr(); 
             $$->type = strdup(var);
             $$->place = strdup($1);  
-            }
+        }
     }
   | LBRACE Expression RBRACE { $$ = $2; }
 ;
@@ -778,12 +802,14 @@ Factor:
 
     int main() {
         FILE *fp;
-char filename[50];
-cout<<"Enter the filename:"<<endl;
-cin>> filename;
-fp = fopen(filename,"r");
-yyin = fp;
-        return yyparse();
+        char filename[50];
+        cout<<"Enter the filename:"<<endl;
+        cin>> filename;
+        fp = fopen(filename,"r");
+        yyin = fp;
+        yyparse();
+        saveTACToFile("tac.txt");
+        return 0;
     }
 
     int yyerror(const char *s) {

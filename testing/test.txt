@@ -1,0 +1,87 @@
+//Test 1 Passed
+// int sum(int a, int b) {
+//     return 5;
+// }
+// int main() {
+//     int x;
+//     x:=5;
+//     x:=sum(5,6);
+//     return x;
+// }
+
+//Test 2 Passed
+// int factorial(int n) {
+//     int result;
+//     result := 1;
+//     while (n > 0) { 
+//         result := result * n;
+
+//         n := n - 1;
+//     }
+//     return result;
+// }
+// int main() {
+//     int number;
+//     int fact;
+//     number := 5;
+//     fact := factorial(number);
+//     return 0;
+// }
+//Test 3 Passed
+// int main() {
+//     int number;
+//     int fact;
+//     fact := 5;
+//     if (fact > 100) {
+
+//         return 1;
+//     } else {
+//         // This is a single-line comment
+//         return 0;
+//     }
+// }
+
+//Test 4 passed
+// int main() {
+//     string greeting;
+//     greeting := "Hello, World!";
+//     if (greeting == "Hello, World!") {
+//         return 0;
+//     } else {
+//         return 1;
+//     }
+// }
+
+
+int add(int a, int b) {
+    int c, d;
+    c := a + b;
+    d := c;
+    return c;
+}
+
+int main() {
+    int age;
+    string name;
+    string less;
+    string more;
+    int result;
+
+    less :="You are a minor";
+    more := "You are an adult";
+    scan(name);
+
+    scan(age);
+    if (age >= 18) {
+        print(more);
+    } else {
+        print(less);
+    }
+
+    /* less := "yo" */
+
+    result := add(5, 3);
+    print(result);
+
+    return 0;
+}
