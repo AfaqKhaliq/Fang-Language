@@ -1,3 +1,16 @@
+
+%code requires{
+    #include <vector>
+    using namespace std;
+        struct Attr {
+    char* type;           
+    vector<int>* truelist; 
+    vector<int>* falselist; 
+    char* place;
+    };
+}   
+
+   
     %{
     #ifdef _MSC_VER
 #define strdup _strdup
@@ -9,16 +22,31 @@
     #include <iostream>
     #include <vector>
     #include<variant>
-    #include<format>
+    #include<sstream>
     using namespace std;
+
 
     int currentCodeLine=0;
     vector<string> Code;
-    void backpatch(vector<int> PatchList,int target){
+    void backpatch(const vector<int>& PatchList,int target){
         for (auto i: PatchList){
-            Code[i]+=""+to_string(target);
+            Code[i]+=to_string(target);
         }
     }
+    vector<int>* MakeList(int x){
+        vector<int>* ptr= new vector<int>;
+        ptr->push_back(x);
+        retrun ptr;
+    }
+
+    int tempcount=0;
+    string genTemp(){
+        ostringstream oss;
+        oss<<"t"<<++tempcount;
+        return oss.str();
+    }
+
+
     struct FunctionSignature {
         string return_type;
         vector<string> param_types;
@@ -204,6 +232,7 @@
 
 
 
+
  
 
     %}
@@ -211,6 +240,7 @@
     %union {
         char* strval;
         int intval;
+        Attr attribute;
         char * type;
     }
     %define parse.error verbose
@@ -220,13 +250,13 @@
     %token OR AND NOT
     %token LESSTHAN MORETHAN LESSANDEQUAL MOREANDEQUAL EQUAL NOTEQUAL
     %token PLUS MINUS MUL DIV MODULO
-    %token <strval> TRUE FALSE
+    %token <attribute> TRUE FALSE
     %type <strval> BaseType  RETURNTYPE IDLIST 
     %type <strval> EXPRSTMT RETURNSTMT
-    %type <strval> Expression NotExpr RelationalExpr AdditiveExpr MultExpr UnaryExpr Factor 
+    %type <attribute> Expression NotExpr RelationalExpr AdditiveExpr MultExpr UnaryExpr Factor PLUS MINUS MUL DIV MODULO MULOP
     %token PRINT SCAN 
     %token IF ELSE WHILE RETURN MAIN
-    %type <strval> AndExpr FunctionCall 
+    %type <attribute> AndExpr FunctionCall 
     %start Program
     %%
 
@@ -347,20 +377,20 @@ STATEMENT: EXPRSTMT
 
 ITERATIONSTMT: WHILE LPAREN Expression RPAREN
     {
-        if(std::string($3) != "bool" && std::string($3)!="int")
+        if(std::string($3.type) != "bool" && std::string($3.type)!="int")
             yyerror("Must Give bool expression for while loop");
     }
 STATEMENT ;
 
 SELECTIONSTMT:IF LPAREN Expression RPAREN MATCHSTMT ELSE MATCHSTMT { 
-    if (std::string($3) != "bool" && std::string($3)!="int")
+    if (std::string($3.type) != "bool" && std::string($3)!="int")
         yyerror("Condition must be bool or int");
 }
 ;
 MATCHSTMT:EXPRSTMT
     |{ createScope(); } COMPOUNDSTMT { exitScope(); }
     | IF LPAREN Expression RPAREN MATCHSTMT ELSE MATCHSTMT { 
-    if (std::string($3) != "bool")
+    if (std::string($3.type) != "bool")
         yyerror("MUST GIVE BOOL EXPRESSION");
 }
     | ITERATIONSTMT
@@ -372,7 +402,7 @@ MATCHSTMT:EXPRSTMT
 
 RETURNSTMT:
     RETURN Expression SEMICOLON {
-        if (function_type != std::string($2)) {
+        if (function_type != std::string($2.type)) {
             printf("Return error: expected %s, got %s\n", function_type.c_str(), $2);
             fflush(stdout);
             yyerror("Return type does not match function return type");
@@ -400,7 +430,7 @@ SCANESTMT:SCAN LPAREN ID {currentTable->IfExist($3);} RPAREN SEMICOLON;
 EXPRSTMT:
     ID ASSIGN Expression SEMICOLON{
         string declared_type =currentTable->lookup($1);
-        if (declared_type != string($3))
+        if (declared_type != string($3.type))
             yyerror("Type mismatch in assignment");
         cout<<"ID Assigned value\n";
 
@@ -427,7 +457,7 @@ FunctionCall:
         if (argument_index != checkFunctionCall->param_id.size()) {
             yyerror("Incorrect number of arguments in function call");
         } else {
-            $$ = strdup(function_type.c_str());
+            $$.type = strdup(function_type.c_str());
         }
     }
 ;
@@ -446,12 +476,12 @@ ARGUMENTSLIST:
         if (parsing_arguments) {
             if (argument_index >= checkFunctionCall->param_types.size()) {
                 yyerror("Too many arguments");
-            } else if (strcmp($3, checkFunctionCall->param_types[argument_index].c_str()) != 0) {
+            } else if (strcmp($3.type, checkFunctionCall->param_types[argument_index].c_str()) != 0) {
                 char msg[128];
                 sprintf(msg, "Argument %d: expected %s, got %s",
                         argument_index + 1,
                         checkFunctionCall->param_types[argument_index].c_str(),
-                        $3);
+                        $3.type);
                 yyerror(msg);
             }
             argument_index++;
@@ -461,12 +491,12 @@ ARGUMENTSLIST:
         if (parsing_arguments) {
             if (argument_index >= checkFunctionCall->param_types.size()) {
                 yyerror("Too many arguments");
-            } else if (strcmp($1, checkFunctionCall->param_types[argument_index].c_str()) != 0) {
+            } else if (strcmp($1.type, checkFunctionCall->param_types[argument_index].c_str()) != 0) {
                 char msg[128];
                 sprintf(msg, "Argument %d: expected %s, got %s",
                         argument_index + 1,
                         checkFunctionCall->param_types[argument_index].c_str(),
-                        $1);
+                        $1.type);
                 yyerror(msg);
             }
             argument_index++;
@@ -476,10 +506,11 @@ ARGUMENTSLIST:
 
 Expression:
     Expression OR AndExpr {
-        if (std::string($1)=="bool"  && std::string($3)=="bool" )
-            $$ = strdup("bool"); 
+        if (std::string($1.type)=="bool"  && std::string($3.type)=="bool" )
+            $$.type = strdup("bool"); 
         else {
             yyerror("OR operands must be bool");
+
         }
     }
   | AndExpr { $$ = $1; }
@@ -490,8 +521,8 @@ Expression:
 
 AndExpr:
     AndExpr AND NotExpr {
-        if (std::string($1)=="bool"  && std::string($3)=="bool" )
-            $$ = strdup("bool"); 
+        if (std::string($1.type)=="bool"  && std::string($3.type)=="bool" )
+            $$.type = strdup("bool"); 
         else {
             yyerror("AND operands must be bool");
         }
@@ -501,8 +532,8 @@ AndExpr:
 
 NotExpr: NOT NotExpr
       {
-        if (std::string($2)=="bool")
-            $$ = strdup("bool"); 
+        if (std::string($2.type)=="bool")
+            $$.type = strdup("bool"); 
         else {
             yyerror("Operand of 'not' must be bool");
         }
@@ -515,8 +546,8 @@ RelationalExpr:
         $$ = $1;
     }
   | AdditiveExpr RELOP AdditiveExpr {
-        if (std::string($1)==std::string($3)) //type must be same
-            $$ = strdup("bool"); 
+        if (std::string($1.type)==std::string($3.type)) //type must be same
+            $$.type = strdup("bool"); 
         else {
             yyerror("Comparison operands must be int");
         }
@@ -535,7 +566,7 @@ RELOP:
 AdditiveExpr:
     AdditiveExpr ARTHOP MultExpr {
         if (std::string($1)=="int" && std::string($3)=="int")
-            $$ = strdup("int");
+            $$.type = strdup("int");
         else {
             yyerror("Operands of '+' must be int");
         }
@@ -550,8 +581,11 @@ ARTHOP:
 
 MultExpr:
     MultExpr MULOP UnaryExpr {
-        if (std::string($1)=="int"  && std::string($3)=="int")
-            $$ = strdup("int");
+        string temp=genTemp();
+        Code[currentCodeLine++]=""+ temp+ $1.place + $3.place +$3.place;
+        $$.place=strdup(temp.c_str());
+        if (std::string($1.type)=="int"  && std::string($3.type)=="int")
+            $$.type = strdup("int");
         else {
             yyerror("Operands of '*' must be int");
         }
@@ -560,15 +594,20 @@ MultExpr:
 ;
 
 MULOP:
-    DIV
-    | MUL 
-    | MODULO
+    DIV {$$.place=strdup("/");}
+    | MUL {$$.place=strdup("*");}
+    | MODULO {$$.place=strdup("%");}
 ;
 
 UnaryExpr:
     MINUS Factor {
-        if (std::string($2) == "int")
-            $$ = strdup("int");
+        string temp=genTemp();
+        Code[currentCodeLine++]=""+temp +"-"+ $2.place ;
+        $$.truelist=$2.falselist;
+        $$.falselist=$2.truelist;
+
+        if (std::string($2.type) == "int")
+            $$.type = strdup("int");
         else
             yyerror("Unary minus only allowed on int");
     }
@@ -576,11 +615,11 @@ UnaryExpr:
 ;
 
 Factor:
-    INT_LITERAL       { $$ = strdup("int"); } 
-  | STRINGLITERAL     { $$ = strdup("string"); } 
-  | CHARLITERAL       { $$ = strdup("char"); } 
-  | TRUE | FALSE      { $$ = strdup("bool"); }
-  | FunctionCall {$$ = strdup($1);}
+    INT_LITERAL       { $$.type = strdup("int"); } 
+  | STRINGLITERAL     { $$.type = strdup("string"); } 
+  | CHARLITERAL       { $$.type = strdup("char"); } 
+  | TRUE | FALSE      { $$.type = strdup("bool"); }
+  | FunctionCall {$$.type= strdup($1.type);}
   | ID {  
     char* var=currentTable->lookup($1);
         if (!var) {
@@ -588,7 +627,7 @@ Factor:
             sprintf(msg, "Undeclared variable: %s", $1);
             yyerror(msg);
         }
-        else{ $$=strdup(var);}
+        else{ $$.type=strdup(var);}
     }
   | LBRACE Expression RBRACE { $$ = $2; }
 ;
