@@ -381,12 +381,21 @@ STMTLIST:STATEMENT STMTLIST
 
 
 
+<<<<<<< HEAD
 STATEMENT:midMarker EXPRSTMT {$$=$1;} 
     |midMarker {createScope();} COMPOUNDSTMT {exitScope(); $$=$1;}
     |midMarker SELECTIONSTMT {$$=$1;} 
     | midMarker ITERATIONSTMT {$$=$1;} 
     | midMarker RETURNSTMT {$$=$1;} 
     | midMarker IOSTMT {$$=$1;} 
+=======
+STATEMENT: EXPRSTMT  {$$ = currentCodeLine}
+    |{createScope();} COMPOUNDSTMT {exitScope();$$ =$2}
+    | SELECTIONSTMT {$$ = currentCodeLine}
+    | ITERATIONSTMT {$$ = currentCodeLine}
+    | RETURNSTMT {$$ = currentCodeLine}
+    | IOSTMT {$$ = currentCodeLine}
+>>>>>>> b7e32b5366078c22e5a0e141bc61099a2c9d3e5b
 ;
 
 
@@ -425,7 +434,11 @@ SELECTIONSTMT:
     MATCHSTMT {
         int afterIf = currentCodeLine++;
         Code[afterIf] = "goto "; // Jump over ELSE
+<<<<<<< HEAD
         $<intval>$ = afterIf;
+=======
+        $<intval>$ = afterIf;//n MARKER
+>>>>>>> b7e32b5366078c22e5a0e141bc61099a2c9d3e5b
         backpatch($4->truelist, $7);
     }
     ELSE {
@@ -436,10 +449,17 @@ SELECTIONSTMT:
     }
 ;
 
+<<<<<<< HEAD
 MATCHSTMT:midMarker EXPRSTMT {$$=$1;} 
     |midMarker {createScope();} COMPOUNDSTMT { exitScope(); $$=$1;}
     |midMarker IF LPAREN Expression RPAREN MATCHSTMT ELSE MATCHSTMT { 
     if (std::string($4->type) != "bool")
+=======
+MATCHSTMT:EXPRSTMT {$$ = currentCodeLine}
+    |{ createScope(); } COMPOUNDSTMT { exitScope();$$ = $2}
+    | IF LPAREN Expression RPAREN MATCHSTMT ELSE MATCHSTMT { 
+    if (std::string($3->type) != "bool")
+>>>>>>> b7e32b5366078c22e5a0e141bc61099a2c9d3e5b
         yyerror("MUST GIVE BOOL EXPRESSION");
     }
     | midMarker ITERATIONSTMT  {$$=$1;} 
