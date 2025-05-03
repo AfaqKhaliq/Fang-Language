@@ -44,6 +44,17 @@
 #if YYDEBUG
 extern int yydebug;
 #endif
+/* "%code requires" blocks.  */
+#line 1 "parser.y"
+
+    #include <string>
+
+    struct Attr {
+        std::string type;     // e.g., "int", "bool"
+        std::string place;    // variable name or temporary (e.g., t1, x)
+    };
+
+#line 58 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -69,11 +80,12 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 10 "parser.y"
+#line 24 "parser.y"
 
     char* strval;
+    Attr * val;
 
-#line 77 "parser.tab.h"
+#line 89 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

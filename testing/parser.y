@@ -1,6 +1,19 @@
+%code requires {
+    #include <string>
+
+    struct Attr {
+        std::string type;     // e.g., "int", "bool"
+        std::string place;    // variable name or temporary (e.g., t1, x)
+    };
+}
+
+
+
+
 %{
 #include <stdio.h>
 #include "symbol_table.h"
+#include <string>
 int yylex(void);
 int yyerror(const char *s);
 char* current_type;
@@ -10,6 +23,7 @@ char* current_type;
 
 %union {
     char* strval;
+    Attr * val;
 }
 
 %token <strval> ID
