@@ -9,12 +9,6 @@
     char* place;
     };
 
-    Attr* makeAttr(const char* type, const char* place) {
-        Attr* a = new Attr();
-        a->type = strdup(type);
-        a->place = strdup(place);
-        return a;
-    }
 
 }   
 
@@ -33,14 +27,25 @@
     #include<sstream>
     using namespace std;
 
+ 
 
     int currentCodeLine=0;
     vector<string> Code(1000);
-    void backpatch(const vector<int>& PatchList,int target){
-        for (auto i: PatchList){
-            Code[i]+=" "+ to_string(target);
-        }
+
+    void backpatch(const std::vector<int>* PatchList, int target) {
+            for (auto i : *PatchList) {
+                Code[i] += " " + std::to_string(target);
+            }
     }
+
+    std::vector<int>* merge(const std::vector<int>* list1, const std::vector<int>* list2) {
+            std::vector<int>* result = new std::vector<int>(*list1);  // Copy contents of list1
+            result->insert(result->end(), list2->begin(), list2->end());  // Append contents of list2
+            return result;
+    }
+
+
+
     vector<int>* MakeList(int x){
         vector<int>* ptr= new vector<int>;
         ptr->push_back(x);
@@ -402,7 +407,7 @@ ITERATIONSTMT:
     }
     STATEMENT {
         // Backpatch truelist of the condition to start of body
-        backpatch($4->truelist, $7);
+        backpatch($4->truelist, std::stoi($7));
 
         // Add jump back to condition after body
         Code[currentCodeLine++] = "goto " + std::to_string($<intval>5);
@@ -426,7 +431,7 @@ SELECTIONSTMT:
         int afterIf = currentCodeLine++;
         Code[afterIf] = "goto "; // Jump over ELSE
         $<intval>$ = afterIf;
-        backpatch($4->truelist, $7);
+        backpatch($4->truelist, std::stoi($7));
     }
     ELSE {
         backpatch($4->falselist, currentCodeLine);
@@ -453,8 +458,8 @@ midMarker:{$$ = strdup(std::to_string(currentCodeLine).c_str());}
 
 RETURNSTMT:
     RETURN Expression SEMICOLON {
-        if (function_type != std::string($2.type)) {
-            printf("Return error: expected %s, got %s\n", function_type.c_str(), $2.type);
+        if (function_type != std::string($2->type)) {
+            printf("Return error: expected %s, got %s\n", function_type.c_str(), $2->type);
             fflush(stdout);
             yyerror("Return type does not match function return type");
         }
@@ -726,11 +731,31 @@ UnaryExpr:
 
 
 Factor:
-    INT_LITERAL       { $$ = makeAttr("int",$1); } 
-  | STRINGLITERAL     { $$ = makeAttr("string",$1); } 
-  | CHARLITERAL       { $$ = makeAttr("char",$1); } 
-  | TRUE              { $$ = makeAttr("bool","true"); }
-  | FALSE             { $$ = makeAttr("bool","false"); }
+    INT_LITERAL {
+        $$ = new Attr();
+        $$->type = strdup("int");
+        $$->place = strdup($1);  // or genTemp() if it's constant folded into temp
+    } 
+  | STRINGLITERAL {
+        $$ = new Attr();
+        $$->type = strdup("string");
+        $$->place = strdup($1);
+    }
+  | CHARLITERAL {
+        $$ = new Attr();
+        $$->type = strdup("char");
+        $$->place = strdup($1);
+    }
+  | TRUE {
+        $$ = new Attr();
+        $$->type = strdup("bool");
+        $$->place = strdup("true");
+    }
+  | FALSE {
+        $$ = new Attr();
+        $$->type = strdup("bool");
+        $$->place = strdup("false");
+    }
   | FunctionCall {$$= $1;}
   | ID {  
     char* var=currentTable->lookup($1);
@@ -739,7 +764,10 @@ Factor:
             sprintf(msg, "Undeclared variable: %s", $1);
             yyerror(msg);
         }
-        else{ $$=makeAttr(var,$1);}
+        else{    
+            $$->type = strdup(var);
+            $$->place = strdup($1);  
+            }
     }
   | LBRACE Expression RBRACE { $$ = $2; }
 ;

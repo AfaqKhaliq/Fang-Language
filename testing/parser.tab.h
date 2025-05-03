@@ -56,15 +56,9 @@ extern int yydebug;
     char* place;
     };
 
-    Attr* makeAttr(const char* type, const char* place) {
-        Attr* a = new Attr();
-        a->type = strdup(type);
-        a->place = strdup(place);
-        return a;
-    }
 
 
-#line 68 "parser.tab.h"
+#line 62 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -122,7 +116,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 247 "parser.y"
+#line 252 "parser.y"
 
         char* strval;
         int intval;
@@ -130,7 +124,7 @@ union YYSTYPE
         char * type;
     
 
-#line 134 "parser.tab.h"
+#line 128 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
