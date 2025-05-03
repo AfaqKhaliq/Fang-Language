@@ -8,6 +8,14 @@
     vector<int>* falselist; 
     char* place;
     };
+
+    Attr* makeAttr(const char* type, const char* place) {
+        Attr* a = new Attr();
+        a->type = strdup(type);
+        a->place = strdup(place);
+        return a;
+    }
+
 }   
 
    
@@ -27,7 +35,7 @@
 
 
     int currentCodeLine=0;
-    vector<string> Code;
+    vector<string> Code(1000);
     void backpatch(const vector<int>& PatchList,int target){
         for (auto i: PatchList){
             Code[i]+=" "+ to_string(target);
@@ -36,7 +44,7 @@
     vector<int>* MakeList(int x){
         vector<int>* ptr= new vector<int>;
         ptr->push_back(x);
-        retrun ptr;
+        return ptr;
     }
 
     int tempcount=0;
@@ -231,12 +239,6 @@
     bool parsing_arguments = false;
 
 
-    Attr* makeAttr(const char* type, const char* place) {
-        Attr* a = new Attr();
-        a->type = strdup(type);
-        a->place = strdup(place);
-        return a;
-    }
 
  
 
@@ -245,7 +247,7 @@
     %union {
         char* strval;
         int intval;
-        Attr attribute;
+        Attr* attribute;
         char * type;
     }
     %define parse.error verbose
@@ -256,8 +258,9 @@
     %token LESSTHAN MORETHAN LESSANDEQUAL MOREANDEQUAL EQUAL NOTEQUAL
     %token PLUS MINUS MUL DIV MODULO
     %token <attribute> TRUE FALSE
-    %type <strval> BaseType  RETURNTYPE IDLIST COMPOUNDSTMT STATEMENT
-    %type <strval> EXPRSTMT RETURNSTMT MULOP RELOP ARTHOP MATCHSTMT 
+    %type <strval> MATCHSTMT 
+    %type <strval> BaseType  RETURNTYPE IDLIST STATEMENT
+    %type <strval> EXPRSTMT RETURNSTMT MULOP RELOP ARTHOP midMarker
     %type <attribute> Expression NotExpr RelationalExpr AdditiveExpr MultExpr UnaryExpr Factor 
     %token PRINT SCAN 
     %token IF ELSE WHILE RETURN MAIN
@@ -342,11 +345,8 @@ BaseType:
   | STRING { $$ = strdup("string"); }
   ;
 
-COMPOUNDSTMT:LBRACE 
-    {
-        $$ = std::string(std::to_string(currentCodeLine)).c_str();
-    } 
-    LOCALDECLARATIONS STMTLIST RBRACE
+COMPOUNDSTMT:
+    LBRACE LOCALDECLARATIONS STMTLIST RBRACE
 ;
 
 
@@ -381,12 +381,12 @@ STMTLIST:STATEMENT STMTLIST
 
 
 
-STATEMENT: EXPRSTMT  {$$ = currentCodeLine}
-    |{createScope();} COMPOUNDSTMT {exitScope();$$ =$1}
-    | SELECTIONSTMT {$$ = currentCodeLine}
-    | ITERATIONSTMT {$$ = currentCodeLine}
-    | RETURNSTMT {$$ = currentCodeLine}
-    | IOSTMT {$$ = currentCodeLine}
+STATEMENT:midMarker EXPRSTMT {$$=$1;} 
+    |midMarker {createScope();} COMPOUNDSTMT {exitScope(); $$=$1;}
+    |midMarker SELECTIONSTMT {$$=$1;} 
+    | midMarker ITERATIONSTMT {$$=$1;} 
+    | midMarker RETURNSTMT {$$=$1;} 
+    | midMarker IOSTMT {$$=$1;} 
 ;
 
 
@@ -394,7 +394,7 @@ ITERATIONSTMT:
     WHILE LPAREN {$<intval>$ = currentCodeLine; 
             // Save the line number where the condition starts
     } Expression RPAREN {
-        if (std::string($3->type) != "bool") {
+        if (std::string($4->type) != "bool") {
             yyerror("While condition must be bool");
         }
 
@@ -402,13 +402,13 @@ ITERATIONSTMT:
     }
     STATEMENT {
         // Backpatch truelist of the condition to start of body
-        backpatch($3->truelist, $6->line);
+        backpatch($4->truelist, $7);
 
         // Add jump back to condition after body
         Code[currentCodeLine++] = "goto " + std::to_string($<intval>5);
 
         // Mark falselist (loop exit) to next instruction
-        backpatch($3->falselist, currentCodeLine); //next line
+        backpatch($4->falselist, currentCodeLine); //next line
     }
 ;
 
@@ -418,7 +418,7 @@ SELECTIONSTMT:
         $<intval>$ = currentCodeLine; 
         // Save the line number where the condition starts
     } Expression RPAREN {
-        if (std::string($3->type) != "bool") {
+        if (std::string($4->type) != "bool") {
             yyerror("Condition must be bool");
         }
     }
@@ -426,27 +426,29 @@ SELECTIONSTMT:
         int afterIf = currentCodeLine++;
         Code[afterIf] = "goto "; // Jump over ELSE
         $<intval>$ = afterIf;
-        backpatch($3->truelist, $6->line);
+        backpatch($4->truelist, $7);
     }
     ELSE {
-        backpatch($3->falselist, currentCodeLine);
+        backpatch($4->falselist, currentCodeLine);
     }
     MATCHSTMT {
         backpatch(MakeList($<intval>8), currentCodeLine); // Fill jump over ELSE
     }
 ;
 
-MATCHSTMT:EXPRSTMT {$$ = currentCodeLine}
-    |{ createScope(); } COMPOUNDSTMT { exitScope();$$ = $1}
-    | IF LPAREN Expression RPAREN MATCHSTMT ELSE MATCHSTMT { 
-    if (std::string($3->type) != "bool")
+MATCHSTMT:midMarker EXPRSTMT {$$=$1;} 
+    |midMarker {createScope();} COMPOUNDSTMT { exitScope(); $$=$1;}
+    |midMarker IF LPAREN Expression RPAREN MATCHSTMT ELSE MATCHSTMT { 
+    if (std::string($4->type) != "bool")
         yyerror("MUST GIVE BOOL EXPRESSION");
-}
-    | ITERATIONSTMT  {$$ = currentCodeLine }
-    | RETURNSTMT  {$$ = currentCodeLine }
-    | IOSTMT { $$ = currentCodeLine}
+    }
+    | midMarker ITERATIONSTMT  {$$=$1;} 
+    | midMarker RETURNSTMT  {$$=$1;} 
+    | midMarker IOSTMT {$$=$1;} 
 ;
 
+midMarker:{$$ = strdup(std::to_string(currentCodeLine).c_str());}
+;
 
 
 RETURNSTMT:
@@ -705,7 +707,7 @@ MULOP:
 
 UnaryExpr:
     MINUS Factor {
-        if (std::string($2->type) == "int")
+        if (std::string($2->type) == "int"){
             $$ = new Attr();
             $$->type = strdup("int");
 
@@ -713,9 +715,7 @@ UnaryExpr:
             Code[currentCodeLine++] = temp + " = -" + $2->place;
 
             $$->place = strdup(temp.c_str());
-
-          
-
+        }
         else
             yyerror("Unary minus only allowed on int");
     }
@@ -731,7 +731,7 @@ Factor:
   | CHARLITERAL       { $$ = makeAttr("char",$1); } 
   | TRUE              { $$ = makeAttr("bool","true"); }
   | FALSE             { $$ = makeAttr("bool","false"); }
-  | FunctionCall {$$= strdup($1.type);}
+  | FunctionCall {$$= $1;}
   | ID {  
     char* var=currentTable->lookup($1);
         if (!var) {

@@ -45,16 +45,26 @@
 extern int yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 1 "parser.y"
+#line 2 "parser.y"
 
-    #include <string>
-
-    struct Attr {
-        std::string type;     // e.g., "int", "bool"
-        std::string place;    // variable name or temporary (e.g., t1, x)
+    #include <vector>
+    using namespace std;
+        struct Attr {
+    char* type;           
+    vector<int>* truelist; 
+    vector<int>* falselist; 
+    char* place;
     };
 
-#line 58 "parser.tab.h"
+    Attr* makeAttr(const char* type, const char* place) {
+        Attr* a = new Attr();
+        a->type = strdup(type);
+        a->place = strdup(place);
+        return a;
+    }
+
+
+#line 68 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -66,12 +76,44 @@ extern int yydebug;
     YYerror = 256,                 /* error  */
     YYUNDEF = 257,                 /* "invalid token"  */
     ID = 258,                      /* ID  */
-    INT = 259,                     /* INT  */
-    BOOL = 260,                    /* BOOL  */
-    CHAR = 261,                    /* CHAR  */
-    STRING = 262,                  /* STRING  */
-    SEMICOLON = 263,               /* SEMICOLON  */
-    COMMA = 264                    /* COMMA  */
+    INT_LITERAL = 259,             /* INT_LITERAL  */
+    STRINGLITERAL = 260,           /* STRINGLITERAL  */
+    CHARLITERAL = 261,             /* CHARLITERAL  */
+    INT = 262,                     /* INT  */
+    BOOL = 263,                    /* BOOL  */
+    CHAR = 264,                    /* CHAR  */
+    STRING = 265,                  /* STRING  */
+    VOID = 266,                    /* VOID  */
+    SEMICOLON = 267,               /* SEMICOLON  */
+    COMMA = 268,                   /* COMMA  */
+    LPAREN = 269,                  /* LPAREN  */
+    RPAREN = 270,                  /* RPAREN  */
+    ASSIGN = 271,                  /* ASSIGN  */
+    LBRACE = 272,                  /* LBRACE  */
+    RBRACE = 273,                  /* RBRACE  */
+    OR = 274,                      /* OR  */
+    AND = 275,                     /* AND  */
+    NOT = 276,                     /* NOT  */
+    LESSTHAN = 277,                /* LESSTHAN  */
+    MORETHAN = 278,                /* MORETHAN  */
+    LESSANDEQUAL = 279,            /* LESSANDEQUAL  */
+    MOREANDEQUAL = 280,            /* MOREANDEQUAL  */
+    EQUAL = 281,                   /* EQUAL  */
+    NOTEQUAL = 282,                /* NOTEQUAL  */
+    PLUS = 283,                    /* PLUS  */
+    MINUS = 284,                   /* MINUS  */
+    MUL = 285,                     /* MUL  */
+    DIV = 286,                     /* DIV  */
+    MODULO = 287,                  /* MODULO  */
+    TRUE = 288,                    /* TRUE  */
+    FALSE = 289,                   /* FALSE  */
+    PRINT = 290,                   /* PRINT  */
+    SCAN = 291,                    /* SCAN  */
+    IF = 292,                      /* IF  */
+    ELSE = 293,                    /* ELSE  */
+    WHILE = 294,                   /* WHILE  */
+    RETURN = 295,                  /* RETURN  */
+    MAIN = 296                     /* MAIN  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -80,12 +122,15 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 24 "parser.y"
+#line 247 "parser.y"
 
-    char* strval;
-     Attr * val;
+        char* strval;
+        int intval;
+        Attr* attribute;
+        char * type;
+    
 
-#line 89 "parser.tab.h"
+#line 134 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
