@@ -28,6 +28,8 @@ WHITESPACE [ \t\r\n]+
 "void"     { return VOID; }
 "print"    { return PRINT; }
 "scan"     { return SCAN; }
+"true"     { return TRUE; }
+"false"     { return FALSE; }
 
 {NUMBER}       { yylval.strval = strdup(yytext); return INT_LITERAL; }
 {IDENTIFIER}   { yylval.strval = strdup(yytext); return ID; }

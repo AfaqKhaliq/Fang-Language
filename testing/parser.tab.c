@@ -446,18 +446,18 @@ union yyalloc
 #endif /* !YYCOPY_NEEDED */
 
 /* YYFINAL -- State number of the termination state.  */
-#define YYFINAL  7
+#define YYFINAL  4
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   9
+#define YYLAST   6
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  10
 /* YYNNTS -- Number of nonterminals.  */
 #define YYNNTS  5
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  9
+#define YYNRULES  6
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  14
+#define YYNSTATES  11
 
 /* YYMAXUTOK -- Last valid token kind.  */
 #define YYMAXUTOK   264
@@ -507,7 +507,7 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int8 yyrline[] =
 {
-       0,    42,    42,    42,    46,    47,    50,    53,    54,    55
+       0,    42,    42,    42,    46,    47,    50
 };
 #endif
 
@@ -535,7 +535,7 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-5)
+#define YYPACT_NINF (-7)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -549,8 +549,8 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-      -4,    -5,    -5,    -5,    -5,     4,    -5,    -5,     2,    -3,
-      -1,     2,    -5,    -5
+      -4,    -7,     1,    -7,    -7,    -1,    -6,    -3,    -1,    -7,
+      -7
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -558,20 +558,20 @@ static const yytype_int8 yypact[] =
    means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       0,     6,     7,     8,     9,     0,     2,     1,     0,     4,
-       0,     0,     3,     5
+       0,     6,     0,     2,     1,     0,     4,     0,     0,     3,
+       5
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-      -5,    -5,    -5,    -2,    -5
+      -7,    -7,    -7,    -2,    -7
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,     5,     8,    10,     6
+       0,     2,     5,     7,     3
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -579,32 +579,32 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-       1,     2,     3,     4,     7,     9,    11,    12,     0,    13
+       1,     4,     6,     8,     0,     9,    10
 };
 
 static const yytype_int8 yycheck[] =
 {
-       4,     5,     6,     7,     0,     3,     9,     8,    -1,    11
+       4,     0,     3,     9,    -1,     8,     8
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,     4,     5,     6,     7,    11,    14,     0,    12,     3,
-      13,     9,     8,    13
+       0,     4,    11,    14,     0,    12,     3,    13,     9,     8,
+      13
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    10,    12,    11,    13,    13,    14,    14,    14,    14
+       0,    10,    12,    11,    13,    13,    14
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     0,     4,     1,     3,     1,     1,     1,     1
+       0,     2,     0,     4,     1,     3,     1
 };
 
 
@@ -1069,7 +1069,7 @@ yyreduce:
     {
   case 2: /* $@1: %empty  */
 #line 42 "parser.y"
-            {current_type=(yyvsp[0].strval);}
+            {current_type=(yyvsp[0].val)->type;}
 #line 1074 "parser.tab.c"
     break;
 
@@ -1088,31 +1088,14 @@ yyreduce:
   case 6: /* BaseType: INT  */
 #line 50 "parser.y"
         {
-        (yyval.strval) = "int";
+       (yyval.val) = new Attr();
+        (yyval.val)->type = "int";
     }
-#line 1094 "parser.tab.c"
-    break;
-
-  case 7: /* BaseType: BOOL  */
-#line 53 "parser.y"
-           { (yyval.strval) = "Bool"; }
-#line 1100 "parser.tab.c"
-    break;
-
-  case 8: /* BaseType: CHAR  */
-#line 54 "parser.y"
-           { (yyval.strval) = "char"; }
-#line 1106 "parser.tab.c"
-    break;
-
-  case 9: /* BaseType: STRING  */
-#line 55 "parser.y"
-             { (yyval.strval) = "string"; }
-#line 1112 "parser.tab.c"
+#line 1095 "parser.tab.c"
     break;
 
 
-#line 1116 "parser.tab.c"
+#line 1099 "parser.tab.c"
 
       default: break;
     }
@@ -1305,7 +1288,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 58 "parser.y"
+#line 59 "parser.y"
    // ← OPTIONAL: main, yyerror, etc.
 
 int main() {
