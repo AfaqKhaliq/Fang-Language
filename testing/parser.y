@@ -30,7 +30,7 @@
     vector<string> Code;
     void backpatch(const vector<int>& PatchList,int target){
         for (auto i: PatchList){
-            Code[i]+=to_string(target);
+            Code[i]+=" "+ to_string(target);
         }
     }
     vector<int>* MakeList(int x){
@@ -342,9 +342,9 @@ BaseType:
   | STRING { $$ = strdup("string"); }
   ;
 
-COMPOUNDSTMT:
-    LBRACE {
-        $$ = currentCodeLine
+COMPOUNDSTMT:LBRACE 
+    {
+        $$ = std::string(std::to_string(currentCodeLine)).c_str();
     } 
     LOCALDECLARATIONS STMTLIST RBRACE
 ;
@@ -391,13 +391,14 @@ STATEMENT: EXPRSTMT  {$$ = currentCodeLine}
 
 
 ITERATIONSTMT:
-    WHILE LPAREN Expression RPAREN {
+    WHILE LPAREN {$<intval>$ = currentCodeLine; 
+            // Save the line number where the condition starts
+    } Expression RPAREN {
         if (std::string($3->type) != "bool") {
             yyerror("While condition must be bool");
         }
 
-        // Save the line number where the condition starts
-        $<intval>$ = currentCodeLine;
+        
     }
     STATEMENT {
         // Backpatch truelist of the condition to start of body
@@ -407,17 +408,19 @@ ITERATIONSTMT:
         Code[currentCodeLine++] = "goto " + std::to_string($<intval>5);
 
         // Mark falselist (loop exit) to next instruction
-        backpatch($3->falselist, currentCodeLine);
+        backpatch($3->falselist, currentCodeLine); //next line
     }
 ;
 
 
 SELECTIONSTMT:
-    IF LPAREN Expression RPAREN {
+    IF LPAREN{
+        $<intval>$ = currentCodeLine; 
+        // Save the line number where the condition starts
+    } Expression RPAREN {
         if (std::string($3->type) != "bool") {
             yyerror("Condition must be bool");
         }
-        $<intval>$ = currentCodeLine; // Marker for IF block
     }
     MATCHSTMT {
         int afterIf = currentCodeLine++;
@@ -711,8 +714,7 @@ UnaryExpr:
 
             $$->place = strdup(temp.c_str());
 
-            // $$->truelist = $2->falselist;
-            // $$->falselist = $2->truelist;
+          
 
         else
             yyerror("Unary minus only allowed on int");
