@@ -7,6 +7,7 @@
     vector<int>* truelist; 
     vector<int>* falselist; 
     char* place;
+    int codeLine;
     };
 
 
@@ -604,7 +605,6 @@ ARGUMENTSLIST:
                         $1->type);
                 yyerror(msg);
             }
-            // ✅ TAC generation
             Code[currentCodeLine++] = "param " + std::string($1->place);
             argument_index++;
         }
@@ -619,7 +619,7 @@ Expression:
             $$->type = strdup("bool");
             $$->truelist = merge($1->truelist, $3->truelist);
             $$->falselist = $3->falselist;
-            backpatch($1->falselist, currentCodeLine);  // evaluate second condition only if first is false
+            backpatch($1->falselist, $3->codeLine);  // evaluate second condition only if first is false
         } else {
             yyerror("OR operands must be bool");
         }
@@ -634,7 +634,8 @@ AndExpr:
             $$->type = strdup("bool");
             $$->truelist = $3->truelist;
             $$->falselist = merge($1->falselist, $3->falselist);
-            backpatch($1->truelist, currentCodeLine);  // evaluate second condition only if first is true
+            cout<<"TrueList: "<<$1->truelist<<" lineno: "<< $3->codeLine<<endl;
+            backpatch($1->truelist, $3->codeLine);  // evaluate second condition only if first is true
         } else {
             yyerror("AND operands must be bool");
         }
@@ -649,6 +650,7 @@ NotExpr:
             $$->type = strdup("bool");
             $$->truelist = $2->falselist;
             $$->falselist = $2->truelist;
+            $$->codeLine=currentCodeLine;
         } else {
             yyerror("Operand of 'not' must be bool");
         }
@@ -663,10 +665,12 @@ RelationalExpr:
             $$ = new Attr();
             $$->type = strdup("bool");
             string relop = $2;
+            $$->codeLine=currentCodeLine;
             Code[currentCodeLine] = "if " + string($1->place) + " " + relop + " " + string($3->place) + " goto ";
             $$->truelist = MakeList(currentCodeLine++);
             Code[currentCodeLine] = "goto ";
             $$->falselist = MakeList(currentCodeLine++);
+            
         } else {
             yyerror("Comparison operands must be of the same type");
         }

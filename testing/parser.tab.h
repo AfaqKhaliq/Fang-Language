@@ -54,11 +54,12 @@ extern int yydebug;
     vector<int>* truelist; 
     vector<int>* falselist; 
     char* place;
+    int codeLine;
     };
 
 
 
-#line 62 "parser.tab.h"
+#line 63 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -116,7 +117,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 268 "parser.y"
+#line 269 "parser.y"
 
         char* strval;
         int intval;
@@ -124,7 +125,7 @@ union YYSTYPE
         char * type;
     
 
-#line 128 "parser.tab.h"
+#line 129 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -1,6 +1,6 @@
 int main(){
     int a,b,c;
-    if(true or true){
+    if( not true ){
         print(a);
     }
     else{

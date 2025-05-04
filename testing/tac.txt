@@ -2,3 +2,14 @@
 1: declare a : int
 2: declare b : int
 3: declare c : int
+4: if a > b goto  6
+5: goto  11
+6: if b < c goto  8
+7: goto  11
+8: param a
+9: call print,1 
+10: goto  13
+11: param b
+12: call print,1 
+13: return 0
+14: endfunc

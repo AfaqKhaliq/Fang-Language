@@ -16,6 +16,9 @@ WHITESPACE [ \t\r\n]+
 
 %%
 
+"or"       {return OR;}
+"not"       {return NOT;}
+"and"       {return AND;}
 "int"      { return INT; }
 "bool"     { return BOOL; }
 "string"   { return STRING; }
@@ -30,8 +33,7 @@ WHITESPACE [ \t\r\n]+
 "scan"     { return SCAN; }
 "true"     { return TRUE; }
 "false"     { return FALSE; }
-"or"            { return OR; }
-"and"            { return AND; }
+
 
 {NUMBER}       { yylval.strval = strdup(yytext); return INT_LITERAL; }
 {IDENTIFIER}   { yylval.strval = strdup(yytext); return ID; }
