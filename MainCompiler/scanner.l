@@ -1,5 +1,5 @@
 %{
-#include "parser2.tab.h"
+#include "parser.tab.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -16,6 +16,9 @@ WHITESPACE [ \t\r\n]+
 
 %%
 
+"or"       {return OR;}
+"not"       {return NOT;}
+"and"       {return AND;}
 "int"      { return INT; }
 "bool"     { return BOOL; }
 "string"   { return STRING; }
@@ -31,11 +34,15 @@ WHITESPACE [ \t\r\n]+
 "true"     { return TRUE; }
 "false"     { return FALSE; }
 
+
 {NUMBER}       { yylval.strval = strdup(yytext); return INT_LITERAL; }
 {IDENTIFIER}   { yylval.strval = strdup(yytext); return ID; }
 {STRING}       { yylval.strval = strdup(yytext); return STRINGLITERAL; }
 {CHAR}         { yylval.strval = strdup(yytext); return CHARLITERAL; }
 {ASSIGNMENT}   { return ASSIGN; }
+
+
+
 ";"            { return SEMICOLON; }
 ","            { return COMMA; }
 "{"            { return LBRACE; }

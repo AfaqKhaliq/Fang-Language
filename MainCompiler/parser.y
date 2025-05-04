@@ -1,3 +1,19 @@
+
+%code requires{
+    #include <vector>
+    using namespace std;
+        struct Attr {
+    char* type;           
+    vector<int>* truelist; 
+    vector<int>* falselist; 
+    char* place;
+    int codeLine;
+    };
+
+
+}   
+
+   
     %{
     #ifdef _MSC_VER
 #define strdup _strdup
@@ -9,15 +25,58 @@
     #include <iostream>
     #include <vector>
     #include<variant>
+    #include<sstream>
+    #include <fstream>
     using namespace std;
 
+ 
+
     int currentCodeLine=0;
-    vector<string> Code;
-    void backpatch(vector<int> PatchList,int target){
-        for (auto i: PatchList){
-            Code[i]+=""+to_string(target);
+    vector<string> Code(1000);
+
+    void saveTACToFile(const string& filename) {
+        ofstream outFile(filename);
+        if (!outFile) {
+            cerr << "Error: Could not open file " << filename << " for writing.\n";
+            return;
         }
+
+        for (int i = 0; i < currentCodeLine; ++i) {
+            outFile << i << ": " << Code[i] << "\n";
+        }
+
+        outFile.close();
+        cout << "TAC saved to " << filename << endl;
     }
+
+    void backpatch(const std::vector<int>* PatchList, int target) {
+            for (auto i : *PatchList) {
+                Code[i] += " " + std::to_string(target);
+            }
+    }
+
+    std::vector<int>* merge(const std::vector<int>* list1, const std::vector<int>* list2) {
+            std::vector<int>* result = new std::vector<int>(*list1);  // Copy contents of list1
+            result->insert(result->end(), list2->begin(), list2->end());  // Append contents of list2
+            return result;
+    }
+
+
+
+    vector<int>* MakeList(int x){
+        vector<int>* ptr= new vector<int>;
+        ptr->push_back(x);
+        return ptr;
+    }
+
+    int tempcount=0;
+    string genTemp(){
+        ostringstream oss;
+        oss<<"t"<<++tempcount;
+        return oss.str();
+    }
+
+
     struct FunctionSignature {
         string return_type;
         vector<string> param_types;
@@ -147,11 +206,11 @@
             }
         }
 
-        void IfExist(const string& name) {
+        bool IfExist(const string& name) {
             if (Table.count(name)) {
-                cout << "Identifier " << name << " exists in current scope" << endl;
+                return true;
             } else {
-                cout << "Identifier " << name << " not declared in current scope" << endl;
+                return false;
                // yyerror(string("Identifier '" + name + "' not declared").c_str());
             }
         }
@@ -169,7 +228,7 @@
 
 
     };
-
+    bool isConditional=false;
     SymbolInfo* checkFunctionCall;
     int argument_index=0;
     string function_type="NULL";
@@ -210,6 +269,7 @@
     %union {
         char* strval;
         int intval;
+        Attr* attribute;
         char * type;
     }
     %define parse.error verbose
@@ -219,13 +279,14 @@
     %token OR AND NOT
     %token LESSTHAN MORETHAN LESSANDEQUAL MOREANDEQUAL EQUAL NOTEQUAL
     %token PLUS MINUS MUL DIV MODULO
-    %token <strval> TRUE FALSE
-    %type <strval> BaseType  RETURNTYPE IDLIST 
-    %type <strval> EXPRSTMT RETURNSTMT
-    %type <strval> Expression NotExpr RelationalExpr AdditiveExpr MultExpr UnaryExpr Factor 
+    %token <attribute> TRUE FALSE
+    %type <strval> MATCHSTMT 
+    %type <strval> BaseType  RETURNTYPE IDLIST STATEMENT
+    %type <strval> EXPRSTMT RETURNSTMT MULOP RELOP ARTHOP midMarker
+    %type <attribute> Expression NotExpr RelationalExpr AdditiveExpr MultExpr UnaryExpr Factor 
     %token PRINT SCAN 
     %token IF ELSE WHILE RETURN MAIN
-    %type <strval> AndExpr FunctionCall 
+    %type <attribute> AndExpr FunctionCall 
     %start Program
     %%
 
@@ -235,18 +296,21 @@
     MAINFUNCTION:
         INT MAIN LPAREN RPAREN 
         {
-            function_type="int"; 
+            function_type = "int"; 
             has_return_statement = false;
             createScope();
+            Code[currentCodeLine++] = "func main:";
         }
         COMPOUNDSTMT
         {
             exitScope();
             if (!has_return_statement) {
-                    yyerror("Non-void function must end with a return statement");
+                yyerror("Non-void function must end with a return statement");
             }
+            Code[currentCodeLine++] = "endfunc";
         }
     ;
+
 
     FUNCTIONDECLARATIONS:
         FUNCTIONDECLARATIONS FUNCTIONDEC
@@ -267,20 +331,20 @@
         {
             createScope();
             currentTable->AddId(currentSignature);
-            function_type=$1;
-            //cout<<function_type;
-            //printf("Function return type = %s\n", function_type.c_str());
-            //fflush(stdout);
+            function_type = $1;
             has_return_statement = false;
+            Code[currentCodeLine++] = "func " + std::string($2) + ":";
         } 
         COMPOUNDSTMT 
         {
             exitScope();
-            if ( strcmp($1,"void")!=0 && !has_return_statement ) {
-               yyerror("func() must end with a return statement");
+            if (strcmp($1, "void") != 0 && !has_return_statement) {
+                yyerror("func() must end with a return statement");
             }
+            Code[currentCodeLine++] = "endfunc";
         }
     ;
+
 
     RETURNTYPE:VOID {$$=strdup("void");}
         | BaseType {$$=$1;}
@@ -304,7 +368,9 @@ BaseType:
   ;
 
 COMPOUNDSTMT:
-    LBRACE LOCALDECLARATIONS STMTLIST RBRACE ;
+    LBRACE LOCALDECLARATIONS STMTLIST RBRACE
+;
+
 
 LOCALDECLARATIONS:
     VarDeclaration LOCALDECLARATIONS
@@ -313,20 +379,26 @@ LOCALDECLARATIONS:
 
 VarDeclaration:
     BaseType
-    { current_type = $1; } 
+    {
+        current_type = $1;
+    } 
     IDLIST SEMICOLON
 ;
+
 IDLIST:
     ID
-    { 
+    {
         currentTable->AddId($1, current_type);
+        Code[currentCodeLine++] = "declare " + std::string($1) + " : " + current_type;
     }
   | ID
     {
         currentTable->AddId($1, current_type);
+        Code[currentCodeLine++] = "declare " + std::string($1) + " : " + current_type;
     } 
     COMMA IDLIST
 ;
+
 
 STMTLIST:STATEMENT STMTLIST 
     | //EMPTY
@@ -335,47 +407,86 @@ STMTLIST:STATEMENT STMTLIST
 
 
 
-STATEMENT: EXPRSTMT 
-    |{createScope();} COMPOUNDSTMT {exitScope();}
-    | SELECTIONSTMT
-    | ITERATIONSTMT
-    | RETURNSTMT
-    | IOSTMT
+STATEMENT:midMarker EXPRSTMT {$$=$1;} 
+    |midMarker {createScope();} COMPOUNDSTMT {exitScope(); $$=$1;}
+    |midMarker SELECTIONSTMT {$$=$1;} 
+    | midMarker ITERATIONSTMT {$$=$1;} 
+    | midMarker RETURNSTMT {$$=$1;} 
+    | midMarker IOSTMT {$$=$1;} 
 ;
 
 
-ITERATIONSTMT: WHILE LPAREN Expression RPAREN
-    {
-        if(std::string($3) != "bool" && std::string($3)!="int")
-            yyerror("Must Give bool expression for while loop");
+ITERATIONSTMT:
+    WHILE LPAREN  midMarker{isConditional=true;} Expression RPAREN {
+        if (std::string($5->type) != "bool") {
+            yyerror("While condition must be bool");
+        }
+        isConditional=false;
     }
-STATEMENT ;
+    STATEMENT {
+        // Backpatch truelist of the condition to start of body
+        backpatch($5->truelist, std::stoi($8));
 
-SELECTIONSTMT:IF LPAREN Expression RPAREN MATCHSTMT ELSE MATCHSTMT { 
-    if (std::string($3) != "bool" && std::string($3)!="int")
-        yyerror("Condition must be bool or int");
-}
+        // Add jump back to condition after body
+        Code[currentCodeLine++] = "goto " + string($3);
+
+        // Mark falselist (loop exit) to next instruction
+        backpatch($5->falselist, currentCodeLine); //next line
+
+    }
 ;
-MATCHSTMT:EXPRSTMT
-    |{ createScope(); } COMPOUNDSTMT { exitScope(); }
-    | IF LPAREN Expression RPAREN MATCHSTMT ELSE MATCHSTMT { 
-    if (std::string($3) != "bool")
+
+
+SELECTIONSTMT:
+    IF LPAREN{
+        $<intval>$ = currentCodeLine; 
+        // Save the line number where the condition starts
+        isConditional=true;
+    } Expression RPAREN {
+        if (std::string($4->type) != "bool") {
+            yyerror("Condition must be bool");
+        }
+        isConditional=false;
+
+    }
+    MATCHSTMT {
+        int afterIf = currentCodeLine++;
+        Code[afterIf] = "goto "; // Jump over ELSE
+        $<intval>$ = afterIf;
+        backpatch($4->truelist, std::stoi($7));
+
+    }
+    ELSE {
+        backpatch($4->falselist, currentCodeLine);
+    }
+    MATCHSTMT {
+        backpatch(MakeList($<intval>8), currentCodeLine); // Fill jump over ELSE
+    }
+;
+
+MATCHSTMT:midMarker EXPRSTMT {$$=$1;} 
+    |midMarker {createScope();} COMPOUNDSTMT { exitScope(); $$=$1;}
+    |midMarker IF LPAREN Expression RPAREN MATCHSTMT ELSE MATCHSTMT { 
+    if (std::string($4->type) != "bool")
         yyerror("MUST GIVE BOOL EXPRESSION");
-}
-    | ITERATIONSTMT
-    | RETURNSTMT
-    | IOSTMT
+    }
+    | midMarker ITERATIONSTMT  {$$=$1;} 
+    | midMarker RETURNSTMT  {$$=$1;} 
+    | midMarker IOSTMT {$$=$1;} 
 ;
 
+midMarker:{$$ = strdup(std::to_string(currentCodeLine).c_str());}
+;
 
 
 RETURNSTMT:
     RETURN Expression SEMICOLON {
-        if (function_type != std::string($2)) {
-            printf("Return error: expected %s, got %s\n", function_type.c_str(), $2);
+        if (function_type != std::string($2->type)) {
+            printf("Return error: expected %s, got %s\n", function_type.c_str(), $2->type);
             fflush(stdout);
             yyerror("Return type does not match function return type");
         }
+        Code[currentCodeLine++] = "return " + std::string($2->place);
         has_return_statement = true;
     }
   | RETURN SEMICOLON {
@@ -384,28 +495,48 @@ RETURNSTMT:
             fflush(stdout);
             yyerror("Non-void function must return a value");
         }
+        Code[currentCodeLine++] = "return";  // For void return
         has_return_statement = true;
     }
 ;
 
 
-IOSTMT:PRINTSTMT
-    | SCANESTMT
-;
-PRINTSTMT:PRINT LPAREN Expression RPAREN SEMICOLON;
-SCANESTMT:SCAN LPAREN ID {currentTable->IfExist($3);} RPAREN SEMICOLON;
 
+IOSTMT:
+    PRINTSTMT
+  | SCANESTMT
+;
+
+PRINTSTMT:
+    PRINT LPAREN Expression RPAREN SEMICOLON {
+        Code[currentCodeLine++] = "param " + std::string($3->place);
+        Code[currentCodeLine++] = "call print,1 ";
+    }
+;
+
+SCANESTMT:
+    SCAN LPAREN ID {
+        if(!currentTable->IfExist($3))
+        {
+            yyerror("Identifier does not exist");
+        } 
+    } RPAREN SEMICOLON {
+        Code[currentCodeLine++] = "param " + std::string($3);
+        Code[currentCodeLine++] = "call scan,1 ";
+    }
+;
 
 EXPRSTMT:
-    ID ASSIGN Expression SEMICOLON{
-        string declared_type =currentTable->lookup($1);
-        if (declared_type != string($3))
+    ID ASSIGN Expression SEMICOLON {
+        string declared_type = currentTable->lookup($1);
+        if (declared_type != std::string($3->type)) {
             yyerror("Type mismatch in assignment");
-        cout<<"ID Assigned value\n";
+        }
 
+        Code[currentCodeLine++] = std::string($1) + " = " + std::string($3->place);
     }
-
 ;
+
 
 
 
@@ -415,21 +546,29 @@ FunctionCall:
         if (!checkFunctionCall || !checkFunctionCall->isFunc) {
             yyerror(("Function '" + std::string($1) + "' not declared").c_str());
         } else {
-
-            function_type = checkFunctionCall->type;  // Save return type for $$ later
+            function_type = checkFunctionCall->type;  // Save return type
             argument_index = 0;
             parsing_arguments = true;
         }
     }
     LPAREN ARGUMENTS RPAREN {
         parsing_arguments = false;
-        if (argument_index != checkFunctionCall->param_id.size()) {
-            yyerror("Incorrect number of arguments in function call");
+        
+        if (!checkFunctionCall) {
+            yyerror("Function Doesn't Exist\n");
+        } else if (argument_index != checkFunctionCall->param_types.size()) {
+            yyerror("Incorrect number of arguments in function call\n");
+    
         } else {
-            $$ = strdup(function_type.c_str());
+            $$ = new Attr();
+            $$->type = strdup(function_type.c_str());
+            std::string temp = genTemp();
+            Code[currentCodeLine++] = temp + " = call " + std::string($1);
+            $$->place = strdup(temp.c_str());
         }
     }
 ;
+
 
 
 
@@ -444,65 +583,78 @@ ARGUMENTSLIST:
     ARGUMENTSLIST COMMA Expression {
         if (parsing_arguments) {
             if (argument_index >= checkFunctionCall->param_types.size()) {
-                yyerror("Too many arguments");
-            } else if (strcmp($3, checkFunctionCall->param_types[argument_index].c_str()) != 0) {
-                char msg[128];
+                yyerror("Too many arguments in function call");
+            } else if (std::string($3->type) != checkFunctionCall->param_types[argument_index]) {
+                char msg[256];
                 sprintf(msg, "Argument %d: expected %s, got %s",
                         argument_index + 1,
                         checkFunctionCall->param_types[argument_index].c_str(),
-                        $3);
+                        $3->type);
                 yyerror(msg);
             }
+            // ✅ TAC generation
+            Code[currentCodeLine++] = "param " + std::string($3->place);
             argument_index++;
         }
     }
   | Expression {
         if (parsing_arguments) {
             if (argument_index >= checkFunctionCall->param_types.size()) {
-                yyerror("Too many arguments");
-            } else if (strcmp($1, checkFunctionCall->param_types[argument_index].c_str()) != 0) {
-                char msg[128];
+                yyerror("Too many arguments in function call");
+            } else if (std::string($1->type) != checkFunctionCall->param_types[argument_index]) {
+                char msg[256];
                 sprintf(msg, "Argument %d: expected %s, got %s",
                         argument_index + 1,
                         checkFunctionCall->param_types[argument_index].c_str(),
-                        $1);
+                        $1->type);
                 yyerror(msg);
             }
+            Code[currentCodeLine++] = "param " + std::string($1->place);
             argument_index++;
         }
     }
 ;
 
+
 Expression:
     Expression OR AndExpr {
-        if (std::string($1)=="bool"  && std::string($3)=="bool" )
-            $$ = strdup("bool"); 
-        else {
+        if (std::string($1->type) == "bool" && std::string($3->type) == "bool") {
+            $$ = new Attr();
+            $$->type = strdup("bool");
+            $$->truelist = merge($1->truelist, $3->truelist);
+            $$->falselist = $3->falselist;
+            backpatch($1->falselist, $3->codeLine);  // evaluate second condition only if first is false
+        } else {
             yyerror("OR operands must be bool");
         }
     }
   | AndExpr { $$ = $1; }
 ;
 
-
-
-
 AndExpr:
     AndExpr AND NotExpr {
-        if (std::string($1)=="bool"  && std::string($3)=="bool" )
-            $$ = strdup("bool"); 
-        else {
+        if (std::string($1->type) == "bool" && std::string($3->type) == "bool") {
+            $$ = new Attr();
+            $$->type = strdup("bool");
+            $$->truelist = $3->truelist;
+            $$->falselist = merge($1->falselist, $3->falselist);
+            backpatch($1->truelist, $3->codeLine);  // evaluate second condition only if first is true
+        } else {
             yyerror("AND operands must be bool");
         }
     }
   | NotExpr { $$ = $1; }
 ;
 
-NotExpr: NOT NotExpr
-      {
-        if (std::string($2)=="bool")
-            $$ = strdup("bool"); 
-        else {
+NotExpr:
+    NOT NotExpr {
+        if (std::string($2->type) == "bool") {
+            $$ = new Attr();
+            $$->type = strdup("bool");
+            $$->truelist = $2->falselist;
+            $$->falselist = $2->truelist;
+            $$->codeLine=currentCodeLine;
+        } else {
             yyerror("Operand of 'not' must be bool");
         }
     }
@@ -510,76 +662,147 @@ NotExpr: NOT NotExpr
 ;
 
 RelationalExpr:
-    AdditiveExpr {
-        $$ = $1;
-    }
+    AdditiveExpr { $$ = $1; }
   | AdditiveExpr RELOP AdditiveExpr {
-        if (std::string($1)==std::string($3)) //type must be same
-            $$ = strdup("bool"); 
-        else {
-            yyerror("Comparison operands must be int");
+        if (std::string($1->type) == std::string($3->type)) {
+            $$ = new Attr();
+            $$->type = strdup("bool");
+            string relop = $2;
+            $$->codeLine=currentCodeLine;
+            Code[currentCodeLine] = "if " + string($1->place) + " " + relop + " " + string($3->place) + " goto ";
+            $$->truelist = MakeList(currentCodeLine++);
+            Code[currentCodeLine] = "goto ";
+            $$->falselist = MakeList(currentCodeLine++);
+            
+        } else {
+            yyerror("Comparison operands must be of the same type");
         }
     }
 ;
 
 RELOP:
-    LESSTHAN 
-    | MORETHAN 
-    | LESSANDEQUAL 
-    | MOREANDEQUAL 
-    | EQUAL 
-    | NOTEQUAL
+    LESSTHAN     { $$ = strdup("<"); }
+  | MORETHAN     { $$ = strdup(">"); }
+  | LESSANDEQUAL { $$ = strdup("<="); }
+  | MOREANDEQUAL { $$ = strdup(">="); }
+  | EQUAL        { $$ = strdup("=="); }
+  | NOTEQUAL     { $$ = strdup("!="); }
 ;
 
 AdditiveExpr:
     AdditiveExpr ARTHOP MultExpr {
-        if (std::string($1)=="int" && std::string($3)=="int")
-            $$ = strdup("int");
-        else {
-            yyerror("Operands of '+' must be int");
+        if (std::string($1->type) == "int" && std::string($3->type) == "int") {
+            $$ = new Attr();
+            $$->type = strdup("int");
+            string temp = genTemp();
+            Code[currentCodeLine++] = temp + " = " + string($1->place) + " " + string($2) + " " + string($3->place);
+            $$->place = strdup(temp.c_str());
+        } else {
+            yyerror("Operands of '+' or '-' must be int");
         }
     }
   | MultExpr { $$ = $1; }
 ;
 
-ARTHOP: 
-    PLUS
-    | MINUS
+ARTHOP:
+    PLUS  { $$ = strdup("+"); }
+  | MINUS { $$ = strdup("-"); }
 ;
 
 MultExpr:
     MultExpr MULOP UnaryExpr {
-        if (std::string($1)=="int"  && std::string($3)=="int")
-            $$ = strdup("int");
-        else {
-            yyerror("Operands of '*' must be int");
+        if (std::string($1->type) == "int" && std::string($3->type) == "int") {
+            $$ = new Attr();
+            $$->type = strdup("int");
+
+            string temp = genTemp();
+            string op = $2;  
+
+            Code[currentCodeLine++] = temp + " = " + $1->place + " " + op + " " + $3->place;
+
+            $$->place = strdup(temp.c_str());
+        } else {
+            yyerror("Operands of '*', '/', '%' must be int");
+            $$ = new Attr();
+            $$->type = strdup("error");
+            $$->place = strdup("err");
         }
     }
-  | UnaryExpr { $$ = $1; }
+  | UnaryExpr {
+        $$ = $1;
+    }
 ;
 
+
 MULOP:
-    DIV
-    | MUL 
-    | MODULO
+    DIV {$$=strdup("/");}
+    | MUL {$$=strdup("*");}
+    | MODULO {$$=strdup("%");}
 ;
 
 UnaryExpr:
     MINUS Factor {
-        if (std::string($2) == "int")
-            $$ = strdup("int");
+        if (std::string($2->type) == "int"){
+            $$ = new Attr();
+            $$->type = strdup("int");
+
+            string temp = genTemp();
+            Code[currentCodeLine++] = temp + " = -" + $2->place;
+
+            $$->place = strdup(temp.c_str());
+        }
         else
             yyerror("Unary minus only allowed on int");
     }
-  | Factor { $$ = $1; }
+  | Factor {
+        $$ = $1;
+    }
 ;
 
+
 Factor:
-    INT_LITERAL       { $$ = strdup("int"); } 
-  | STRINGLITERAL     { $$ = strdup("string"); } 
-  | CHARLITERAL       { $$ = strdup("char"); } 
-  | TRUE | FALSE      { $$ = strdup("bool"); }
-  | FunctionCall {$$ = strdup($1);}
+    INT_LITERAL {
+        $$ = new Attr();
+        $$->type = strdup("int");
+        $$->place = strdup($1);  // or genTemp() if it's constant folded into temp
+    } 
+  | STRINGLITERAL {
+        $$ = new Attr();
+        $$->type = strdup("string");
+        $$->place = strdup($1);
+    }
+  | CHARLITERAL {
+        $$ = new Attr();
+        $$->type = strdup("char");
+        $$->place = strdup($1);
+    }
+  | TRUE {
+        $$ = new Attr();
+        $$->type = strdup("bool");
+        $$->place = strdup("true");
+        if(isConditional)
+        {
+            $$->codeLine=currentCodeLine;
+            Code[currentCodeLine] ="if true goto ";
+            $$->truelist = MakeList(currentCodeLine++);
+            Code[currentCodeLine] = "goto ";
+            $$->falselist = MakeList(currentCodeLine++);
+        }
+    }
+  | FALSE {
+        $$ = new Attr();
+        $$->type = strdup("bool");
+        $$->place = strdup("false");
+        if(isConditional)
+        {
+            $$->codeLine=currentCodeLine;
+            Code[currentCodeLine] = "if false goto ";
+            $$->truelist = MakeList(currentCodeLine++);
+            Code[currentCodeLine] = "goto ";
+            $$->falselist = MakeList(currentCodeLine++);
+        }
+    }
+  | FunctionCall {$$= $1;}
   | ID {  
     char* var=currentTable->lookup($1);
         if (!var) {
@@ -587,9 +810,21 @@ Factor:
             sprintf(msg, "Undeclared variable: %s", $1);
             yyerror(msg);
         }
-        else{ $$=strdup(var);}
+        else{   
+            $$ = new Attr(); 
+            $$->type = strdup(var);
+            $$->place = strdup($1); 
+            if(std::string(var)=="bool" && isConditional)
+            {
+                $$->codeLine=currentCodeLine;
+                Code[currentCodeLine] = "if " + std::string($$->place) + " goto ";
+                $$->truelist = MakeList(currentCodeLine++);
+                Code[currentCodeLine] = "goto ";
+                $$->falselist = MakeList(currentCodeLine++);
+            }
+        }
     }
-  | LBRACE Expression RBRACE { $$ = $2; }
+  | LPAREN Expression RPAREN { $$ = $2; }
 ;
 
 
@@ -598,12 +833,14 @@ Factor:
 
     int main() {
         FILE *fp;
-char filename[50];
-cout<<"Enter the filename:"<<endl;
-cin>> filename;
-fp = fopen(filename,"r");
-yyin = fp;
-        return yyparse();
+        char filename[50];
+        cout<<"Enter the filename:"<<endl;
+        cin>> filename;
+        fp = fopen(filename,"r");
+        yyin = fp;
+        yyparse();
+        saveTACToFile("tac.txt");
+        return 0;
     }
 
     int yyerror(const char *s) {

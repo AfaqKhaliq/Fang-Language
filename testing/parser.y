@@ -228,7 +228,7 @@
 
 
     };
-
+    bool isConditional=false;
     SymbolInfo* checkFunctionCall;
     int argument_index=0;
     string function_type="NULL";
@@ -417,22 +417,22 @@ STATEMENT:midMarker EXPRSTMT {$$=$1;}
 
 
 ITERATIONSTMT:
-    WHILE LPAREN  midMarker Expression RPAREN {
-        if (std::string($4->type) != "bool") {
+    WHILE LPAREN  midMarker{isConditional=true;} Expression RPAREN {
+        if (std::string($5->type) != "bool") {
             yyerror("While condition must be bool");
         }
-
-        
+        isConditional=false;
     }
     STATEMENT {
         // Backpatch truelist of the condition to start of body
-        backpatch($4->truelist, std::stoi($7));
+        backpatch($5->truelist, std::stoi($8));
 
         // Add jump back to condition after body
         Code[currentCodeLine++] = "goto " + string($3);
 
         // Mark falselist (loop exit) to next instruction
-        backpatch($4->falselist, currentCodeLine); //next line
+        backpatch($5->falselist, currentCodeLine); //next line
+
     }
 ;
 
@@ -441,16 +441,20 @@ SELECTIONSTMT:
     IF LPAREN{
         $<intval>$ = currentCodeLine; 
         // Save the line number where the condition starts
+        isConditional=true;
     } Expression RPAREN {
         if (std::string($4->type) != "bool") {
             yyerror("Condition must be bool");
         }
+        isConditional=false;
+
     }
     MATCHSTMT {
         int afterIf = currentCodeLine++;
         Code[afterIf] = "goto "; // Jump over ELSE
         $<intval>$ = afterIf;
         backpatch($4->truelist, std::stoi($7));
+
     }
     ELSE {
         backpatch($4->falselist, currentCodeLine);
@@ -634,7 +638,6 @@ AndExpr:
             $$->type = strdup("bool");
             $$->truelist = $3->truelist;
             $$->falselist = merge($1->falselist, $3->falselist);
-            cout<<"TrueList: "<<$1->truelist<<" lineno: "<< $3->codeLine<<endl;
             backpatch($1->truelist, $3->codeLine);  // evaluate second condition only if first is true
         } else {
             yyerror("AND operands must be bool");
@@ -777,11 +780,27 @@ Factor:
         $$ = new Attr();
         $$->type = strdup("bool");
         $$->place = strdup("true");
+        if(isConditional)
+        {
+            $$->codeLine=currentCodeLine;
+            Code[currentCodeLine] ="if true goto ";
+            $$->truelist = MakeList(currentCodeLine++);
+            Code[currentCodeLine] = "goto ";
+            $$->falselist = MakeList(currentCodeLine++);
+        }
     }
   | FALSE {
         $$ = new Attr();
         $$->type = strdup("bool");
         $$->place = strdup("false");
+        if(isConditional)
+        {
+            $$->codeLine=currentCodeLine;
+            Code[currentCodeLine] = "if false goto ";
+            $$->truelist = MakeList(currentCodeLine++);
+            Code[currentCodeLine] = "goto ";
+            $$->falselist = MakeList(currentCodeLine++);
+        }
     }
   | FunctionCall {$$= $1;}
   | ID {  
@@ -794,10 +813,18 @@ Factor:
         else{   
             $$ = new Attr(); 
             $$->type = strdup(var);
-            $$->place = strdup($1);  
+            $$->place = strdup($1); 
+            if(std::string(var)=="bool" && isConditional)
+            {
+                $$->codeLine=currentCodeLine;
+                Code[currentCodeLine] = "if " + std::string($$->place) + " goto ";
+                $$->truelist = MakeList(currentCodeLine++);
+                Code[currentCodeLine] = "goto ";
+                $$->falselist = MakeList(currentCodeLine++);
+            }
         }
     }
-  | LBRACE Expression RBRACE { $$ = $2; }
+  | LPAREN Expression RPAREN { $$ = $2; }
 ;
 
 

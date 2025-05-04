@@ -1,0 +1,35 @@
+0: func add:
+1: declare c : int
+2: declare d : int
+3: t1 = a + b
+4: c = t1
+5: d = c
+6: return c
+7: endfunc
+8: func main:
+9: declare age : int
+10: declare name : string
+11: declare less : string
+12: declare more : string
+13: declare result : int
+14: less = "You are a minor"
+15: more = "You are an adult"
+16: param name
+17: call scan,1 
+18: param age
+19: call scan,1 
+20: if age >= 18 goto  22
+21: goto  25
+22: param more
+23: call print,1 
+24: goto  27
+25: param less
+26: call print,1 
+27: param 5
+28: param 3
+29: t2 = call add
+30: result = t2
+31: param result
+32: call print,1 
+33: return 0
+34: endfunc
