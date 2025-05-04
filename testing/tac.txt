@@ -1,16 +1,4 @@
 0: func main:
-1: declare i : int
-2: i = 0
-3: if i < 5 goto  5
-4: goto  14
-5: t1 = i % 2
-6: if t1 == 0 goto  8
-7: goto  10
-8: print i
-9: goto  11
-10: declare y : int
-11: t2 = i + 1
-12: i = t2
-13: goto 3
-14: return 0
-15: endfunc
+1: declare a : int
+2: declare b : int
+3: declare c : int

@@ -838,12 +838,12 @@ static const yytype_int16 yyrline[] =
      365,   366,   370,   375,   376,   381,   380,   388,   394,   393,
      402,   403,   409,   410,   410,   411,   412,   413,   414,   419,
      419,   440,   443,   448,   454,   440,   462,   463,   463,   464,
-     468,   469,   470,   473,   478,   487,   501,   502,   506,   512,
-     512,   523,   537,   537,   569,   570,   576,   593,   614,   625,
-     629,   640,   644,   654,   658,   659,   675,   676,   677,   678,
-     679,   680,   684,   695,   699,   700,   704,   722,   729,   730,
-     731,   735,   748,   755,   760,   765,   770,   775,   780,   781,
-     794
+     468,   469,   470,   473,   478,   487,   501,   502,   506,   513,
+     513,   525,   539,   539,   571,   572,   578,   595,   616,   627,
+     631,   642,   646,   656,   660,   661,   677,   678,   679,   680,
+     681,   682,   686,   697,   701,   702,   706,   724,   731,   732,
+     733,   737,   750,   757,   762,   767,   772,   777,   782,   783,
+     796
 };
 #endif
 
@@ -2120,32 +2120,34 @@ yyreduce:
   case 58: /* PRINTSTMT: PRINT LPAREN Expression RPAREN SEMICOLON  */
 #line 506 "parser.y"
                                              {
-        Code[currentCodeLine++] = "print " + std::string((yyvsp[-2].attribute)->place);
+        Code[currentCodeLine++] = "param " + std::string((yyvsp[-2].attribute)->place);
+        Code[currentCodeLine++] = "call print,1 ";
     }
-#line 2126 "parser.tab.c"
+#line 2127 "parser.tab.c"
     break;
 
   case 59: /* $@14: %empty  */
-#line 512 "parser.y"
+#line 513 "parser.y"
                    {
         if(!currentTable->IfExist((yyvsp[0].strval)))
         {
             yyerror("Identifier does not exist");
         } 
     }
-#line 2137 "parser.tab.c"
+#line 2138 "parser.tab.c"
     break;
 
   case 60: /* SCANESTMT: SCAN LPAREN ID $@14 RPAREN SEMICOLON  */
-#line 517 "parser.y"
+#line 518 "parser.y"
                        {
-        Code[currentCodeLine++] = "scan " + std::string((yyvsp[-3].strval));
+        Code[currentCodeLine++] = "param " + std::string((yyvsp[-3].strval));
+        Code[currentCodeLine++] = "call scan,1 ";
     }
-#line 2145 "parser.tab.c"
+#line 2147 "parser.tab.c"
     break;
 
   case 61: /* EXPRSTMT: ID ASSIGN Expression SEMICOLON  */
-#line 523 "parser.y"
+#line 525 "parser.y"
                                    {
         string declared_type = currentTable->lookup((yyvsp[-3].strval));
         if (declared_type != std::string((yyvsp[-1].attribute)->type)) {
@@ -2154,11 +2156,11 @@ yyreduce:
 
         Code[currentCodeLine++] = std::string((yyvsp[-3].strval)) + " = " + std::string((yyvsp[-1].attribute)->place);
     }
-#line 2158 "parser.tab.c"
+#line 2160 "parser.tab.c"
     break;
 
   case 62: /* $@15: %empty  */
-#line 537 "parser.y"
+#line 539 "parser.y"
        {
         checkFunctionCall = currentTable->LookupFunction((yyvsp[0].strval));
         if (!checkFunctionCall || !checkFunctionCall->isFunc) {
@@ -2169,11 +2171,11 @@ yyreduce:
             parsing_arguments = true;
         }
     }
-#line 2173 "parser.tab.c"
+#line 2175 "parser.tab.c"
     break;
 
   case 63: /* FunctionCall: ID $@15 LPAREN ARGUMENTS RPAREN  */
-#line 547 "parser.y"
+#line 549 "parser.y"
                             {
         parsing_arguments = false;
         
@@ -2190,23 +2192,23 @@ yyreduce:
             (yyval.attribute)->place = strdup(temp.c_str());
         }
     }
-#line 2194 "parser.tab.c"
+#line 2196 "parser.tab.c"
     break;
 
   case 64: /* ARGUMENTS: ARGUMENTSLIST  */
-#line 569 "parser.y"
+#line 571 "parser.y"
                   { }
-#line 2200 "parser.tab.c"
+#line 2202 "parser.tab.c"
     break;
 
   case 65: /* ARGUMENTS: %empty  */
-#line 570 "parser.y"
+#line 572 "parser.y"
                   { }
-#line 2206 "parser.tab.c"
+#line 2208 "parser.tab.c"
     break;
 
   case 66: /* ARGUMENTSLIST: ARGUMENTSLIST COMMA Expression  */
-#line 576 "parser.y"
+#line 578 "parser.y"
                                    {
         if (parsing_arguments) {
             if (argument_index >= checkFunctionCall->param_types.size()) {
@@ -2224,11 +2226,11 @@ yyreduce:
             argument_index++;
         }
     }
-#line 2228 "parser.tab.c"
+#line 2230 "parser.tab.c"
     break;
 
   case 67: /* ARGUMENTSLIST: Expression  */
-#line 593 "parser.y"
+#line 595 "parser.y"
                {
         if (parsing_arguments) {
             if (argument_index >= checkFunctionCall->param_types.size()) {
@@ -2246,11 +2248,11 @@ yyreduce:
             argument_index++;
         }
     }
-#line 2250 "parser.tab.c"
+#line 2252 "parser.tab.c"
     break;
 
   case 68: /* Expression: Expression OR AndExpr  */
-#line 614 "parser.y"
+#line 616 "parser.y"
                           {
         if (std::string((yyvsp[-2].attribute)->type) == "bool" && std::string((yyvsp[0].attribute)->type) == "bool") {
             (yyval.attribute) = new Attr();
@@ -2262,17 +2264,17 @@ yyreduce:
             yyerror("OR operands must be bool");
         }
     }
-#line 2266 "parser.tab.c"
+#line 2268 "parser.tab.c"
     break;
 
   case 69: /* Expression: AndExpr  */
-#line 625 "parser.y"
+#line 627 "parser.y"
             { (yyval.attribute) = (yyvsp[0].attribute); }
-#line 2272 "parser.tab.c"
+#line 2274 "parser.tab.c"
     break;
 
   case 70: /* AndExpr: AndExpr AND NotExpr  */
-#line 629 "parser.y"
+#line 631 "parser.y"
                         {
         if (std::string((yyvsp[-2].attribute)->type) == "bool" && std::string((yyvsp[0].attribute)->type) == "bool") {
             (yyval.attribute) = new Attr();
@@ -2284,17 +2286,17 @@ yyreduce:
             yyerror("AND operands must be bool");
         }
     }
-#line 2288 "parser.tab.c"
+#line 2290 "parser.tab.c"
     break;
 
   case 71: /* AndExpr: NotExpr  */
-#line 640 "parser.y"
+#line 642 "parser.y"
             { (yyval.attribute) = (yyvsp[0].attribute); }
-#line 2294 "parser.tab.c"
+#line 2296 "parser.tab.c"
     break;
 
   case 72: /* NotExpr: NOT NotExpr  */
-#line 644 "parser.y"
+#line 646 "parser.y"
                 {
         if (std::string((yyvsp[0].attribute)->type) == "bool") {
             (yyval.attribute) = new Attr();
@@ -2305,23 +2307,23 @@ yyreduce:
             yyerror("Operand of 'not' must be bool");
         }
     }
-#line 2309 "parser.tab.c"
+#line 2311 "parser.tab.c"
     break;
 
   case 73: /* NotExpr: RelationalExpr  */
-#line 654 "parser.y"
+#line 656 "parser.y"
                    { (yyval.attribute) = (yyvsp[0].attribute); }
-#line 2315 "parser.tab.c"
+#line 2317 "parser.tab.c"
     break;
 
   case 74: /* RelationalExpr: AdditiveExpr  */
-#line 658 "parser.y"
+#line 660 "parser.y"
                  { (yyval.attribute) = (yyvsp[0].attribute); }
-#line 2321 "parser.tab.c"
+#line 2323 "parser.tab.c"
     break;
 
   case 75: /* RelationalExpr: AdditiveExpr RELOP AdditiveExpr  */
-#line 659 "parser.y"
+#line 661 "parser.y"
                                     {
         if (std::string((yyvsp[-2].attribute)->type) == std::string((yyvsp[0].attribute)->type)) {
             (yyval.attribute) = new Attr();
@@ -2335,47 +2337,47 @@ yyreduce:
             yyerror("Comparison operands must be of the same type");
         }
     }
-#line 2339 "parser.tab.c"
+#line 2341 "parser.tab.c"
     break;
 
   case 76: /* RELOP: LESSTHAN  */
-#line 675 "parser.y"
+#line 677 "parser.y"
                  { (yyval.strval) = strdup("<"); }
-#line 2345 "parser.tab.c"
+#line 2347 "parser.tab.c"
     break;
 
   case 77: /* RELOP: MORETHAN  */
-#line 676 "parser.y"
+#line 678 "parser.y"
                  { (yyval.strval) = strdup(">"); }
-#line 2351 "parser.tab.c"
+#line 2353 "parser.tab.c"
     break;
 
   case 78: /* RELOP: LESSANDEQUAL  */
-#line 677 "parser.y"
+#line 679 "parser.y"
                  { (yyval.strval) = strdup("<="); }
-#line 2357 "parser.tab.c"
+#line 2359 "parser.tab.c"
     break;
 
   case 79: /* RELOP: MOREANDEQUAL  */
-#line 678 "parser.y"
+#line 680 "parser.y"
                  { (yyval.strval) = strdup(">="); }
-#line 2363 "parser.tab.c"
+#line 2365 "parser.tab.c"
     break;
 
   case 80: /* RELOP: EQUAL  */
-#line 679 "parser.y"
+#line 681 "parser.y"
                  { (yyval.strval) = strdup("=="); }
-#line 2369 "parser.tab.c"
+#line 2371 "parser.tab.c"
     break;
 
   case 81: /* RELOP: NOTEQUAL  */
-#line 680 "parser.y"
+#line 682 "parser.y"
                  { (yyval.strval) = strdup("!="); }
-#line 2375 "parser.tab.c"
+#line 2377 "parser.tab.c"
     break;
 
   case 82: /* AdditiveExpr: AdditiveExpr ARTHOP MultExpr  */
-#line 684 "parser.y"
+#line 686 "parser.y"
                                  {
         if (std::string((yyvsp[-2].attribute)->type) == "int" && std::string((yyvsp[0].attribute)->type) == "int") {
             (yyval.attribute) = new Attr();
@@ -2387,29 +2389,29 @@ yyreduce:
             yyerror("Operands of '+' or '-' must be int");
         }
     }
-#line 2391 "parser.tab.c"
+#line 2393 "parser.tab.c"
     break;
 
   case 83: /* AdditiveExpr: MultExpr  */
-#line 695 "parser.y"
+#line 697 "parser.y"
              { (yyval.attribute) = (yyvsp[0].attribute); }
-#line 2397 "parser.tab.c"
+#line 2399 "parser.tab.c"
     break;
 
   case 84: /* ARTHOP: PLUS  */
-#line 699 "parser.y"
+#line 701 "parser.y"
           { (yyval.strval) = strdup("+"); }
-#line 2403 "parser.tab.c"
+#line 2405 "parser.tab.c"
     break;
 
   case 85: /* ARTHOP: MINUS  */
-#line 700 "parser.y"
+#line 702 "parser.y"
           { (yyval.strval) = strdup("-"); }
-#line 2409 "parser.tab.c"
+#line 2411 "parser.tab.c"
     break;
 
   case 86: /* MultExpr: MultExpr MULOP UnaryExpr  */
-#line 704 "parser.y"
+#line 706 "parser.y"
                              {
         if (std::string((yyvsp[-2].attribute)->type) == "int" && std::string((yyvsp[0].attribute)->type) == "int") {
             (yyval.attribute) = new Attr();
@@ -2428,37 +2430,37 @@ yyreduce:
             (yyval.attribute)->place = strdup("err");
         }
     }
-#line 2432 "parser.tab.c"
+#line 2434 "parser.tab.c"
     break;
 
   case 87: /* MultExpr: UnaryExpr  */
-#line 722 "parser.y"
+#line 724 "parser.y"
               {
         (yyval.attribute) = (yyvsp[0].attribute);
     }
-#line 2440 "parser.tab.c"
+#line 2442 "parser.tab.c"
     break;
 
   case 88: /* MULOP: DIV  */
-#line 729 "parser.y"
+#line 731 "parser.y"
         {(yyval.strval)=strdup("/");}
-#line 2446 "parser.tab.c"
+#line 2448 "parser.tab.c"
     break;
 
   case 89: /* MULOP: MUL  */
-#line 730 "parser.y"
+#line 732 "parser.y"
           {(yyval.strval)=strdup("*");}
-#line 2452 "parser.tab.c"
+#line 2454 "parser.tab.c"
     break;
 
   case 90: /* MULOP: MODULO  */
-#line 731 "parser.y"
+#line 733 "parser.y"
              {(yyval.strval)=strdup("%");}
-#line 2458 "parser.tab.c"
+#line 2460 "parser.tab.c"
     break;
 
   case 91: /* UnaryExpr: MINUS Factor  */
-#line 735 "parser.y"
+#line 737 "parser.y"
                  {
         if (std::string((yyvsp[0].attribute)->type) == "int"){
             (yyval.attribute) = new Attr();
@@ -2472,75 +2474,75 @@ yyreduce:
         else
             yyerror("Unary minus only allowed on int");
     }
-#line 2476 "parser.tab.c"
+#line 2478 "parser.tab.c"
     break;
 
   case 92: /* UnaryExpr: Factor  */
-#line 748 "parser.y"
+#line 750 "parser.y"
            {
         (yyval.attribute) = (yyvsp[0].attribute);
     }
-#line 2484 "parser.tab.c"
+#line 2486 "parser.tab.c"
     break;
 
   case 93: /* Factor: INT_LITERAL  */
-#line 755 "parser.y"
+#line 757 "parser.y"
                 {
         (yyval.attribute) = new Attr();
         (yyval.attribute)->type = strdup("int");
         (yyval.attribute)->place = strdup((yyvsp[0].strval));  // or genTemp() if it's constant folded into temp
     }
-#line 2494 "parser.tab.c"
+#line 2496 "parser.tab.c"
     break;
 
   case 94: /* Factor: STRINGLITERAL  */
-#line 760 "parser.y"
+#line 762 "parser.y"
                   {
         (yyval.attribute) = new Attr();
         (yyval.attribute)->type = strdup("string");
         (yyval.attribute)->place = strdup((yyvsp[0].strval));
     }
-#line 2504 "parser.tab.c"
+#line 2506 "parser.tab.c"
     break;
 
   case 95: /* Factor: CHARLITERAL  */
-#line 765 "parser.y"
+#line 767 "parser.y"
                 {
         (yyval.attribute) = new Attr();
         (yyval.attribute)->type = strdup("char");
         (yyval.attribute)->place = strdup((yyvsp[0].strval));
     }
-#line 2514 "parser.tab.c"
+#line 2516 "parser.tab.c"
     break;
 
   case 96: /* Factor: TRUE  */
-#line 770 "parser.y"
+#line 772 "parser.y"
          {
         (yyval.attribute) = new Attr();
         (yyval.attribute)->type = strdup("bool");
         (yyval.attribute)->place = strdup("true");
     }
-#line 2524 "parser.tab.c"
+#line 2526 "parser.tab.c"
     break;
 
   case 97: /* Factor: FALSE  */
-#line 775 "parser.y"
+#line 777 "parser.y"
           {
         (yyval.attribute) = new Attr();
         (yyval.attribute)->type = strdup("bool");
         (yyval.attribute)->place = strdup("false");
     }
-#line 2534 "parser.tab.c"
+#line 2536 "parser.tab.c"
     break;
 
   case 98: /* Factor: FunctionCall  */
-#line 780 "parser.y"
+#line 782 "parser.y"
                  {(yyval.attribute)= (yyvsp[0].attribute);}
-#line 2540 "parser.tab.c"
+#line 2542 "parser.tab.c"
     break;
 
   case 99: /* Factor: ID  */
-#line 781 "parser.y"
+#line 783 "parser.y"
        {  
     char* var=currentTable->lookup((yyvsp[0].strval));
         if (!var) {
@@ -2554,17 +2556,17 @@ yyreduce:
             (yyval.attribute)->place = strdup((yyvsp[0].strval));  
         }
     }
-#line 2558 "parser.tab.c"
+#line 2560 "parser.tab.c"
     break;
 
   case 100: /* Factor: LBRACE Expression RBRACE  */
-#line 794 "parser.y"
+#line 796 "parser.y"
                              { (yyval.attribute) = (yyvsp[-1].attribute); }
-#line 2564 "parser.tab.c"
+#line 2566 "parser.tab.c"
     break;
 
 
-#line 2568 "parser.tab.c"
+#line 2570 "parser.tab.c"
 
       default: break;
     }
@@ -2788,7 +2790,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 799 "parser.y"
+#line 801 "parser.y"
 
 
     int main() {

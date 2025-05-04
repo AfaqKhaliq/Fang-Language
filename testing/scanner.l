@@ -30,12 +30,17 @@ WHITESPACE [ \t\r\n]+
 "scan"     { return SCAN; }
 "true"     { return TRUE; }
 "false"     { return FALSE; }
+"or"            { return OR; }
+"and"            { return AND; }
 
 {NUMBER}       { yylval.strval = strdup(yytext); return INT_LITERAL; }
 {IDENTIFIER}   { yylval.strval = strdup(yytext); return ID; }
 {STRING}       { yylval.strval = strdup(yytext); return STRINGLITERAL; }
 {CHAR}         { yylval.strval = strdup(yytext); return CHARLITERAL; }
 {ASSIGNMENT}   { return ASSIGN; }
+
+
+
 ";"            { return SEMICOLON; }
 ","            { return COMMA; }
 "{"            { return LBRACE; }

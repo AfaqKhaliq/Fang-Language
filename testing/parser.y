@@ -504,7 +504,8 @@ IOSTMT:
 
 PRINTSTMT:
     PRINT LPAREN Expression RPAREN SEMICOLON {
-        Code[currentCodeLine++] = "print " + std::string($3->place);
+        Code[currentCodeLine++] = "param " + std::string($3->place);
+        Code[currentCodeLine++] = "call print,1 ";
     }
 ;
 
@@ -515,7 +516,8 @@ SCANESTMT:
             yyerror("Identifier does not exist");
         } 
     } RPAREN SEMICOLON {
-        Code[currentCodeLine++] = "scan " + std::string($3);
+        Code[currentCodeLine++] = "param " + std::string($3);
+        Code[currentCodeLine++] = "call scan,1 ";
     }
 ;
 
