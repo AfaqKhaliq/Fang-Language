@@ -416,9 +416,7 @@ STATEMENT:midMarker EXPRSTMT {$$=$1;}
 
 
 ITERATIONSTMT:
-    WHILE LPAREN {$<intval>$ = currentCodeLine; 
-            // Save the line number where the condition starts
-    } Expression RPAREN {
+    WHILE LPAREN  midMarker Expression RPAREN {
         if (std::string($4->type) != "bool") {
             yyerror("While condition must be bool");
         }
@@ -430,7 +428,7 @@ ITERATIONSTMT:
         backpatch($4->truelist, std::stoi($7));
 
         // Add jump back to condition after body
-        Code[currentCodeLine++] = "goto " + std::to_string($<intval>5);
+        Code[currentCodeLine++] = "goto " + string($3);
 
         // Mark falselist (loop exit) to next instruction
         backpatch($4->falselist, currentCodeLine); //next line

@@ -1,1 +1,14 @@
-int x , y, z;
+int main(){
+    int i;
+    i:=0;
+    while(i<5){
+        if (i%2==0){
+            print(i);
+        }
+        else{
+            int y;
+        }
+        i:=y+1;
+    }
+    return 0;
+}
